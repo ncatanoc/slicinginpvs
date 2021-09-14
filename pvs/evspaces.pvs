@@ -1,0 +1,1886 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% -------------- Part 1 -------------- %%%%%%%%%%%
+% This first part covers the modeling of the data type for the
+% Java language.
+%%%%%%%%%%%%% ------------------------------------ %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% References (to objects)
+%%++obj : DATATYPE
+%%++ BEGIN
+%%++   % The null reference
+%%++    Nullobj : Nullobj?
+%%++    % Reference to an object in the store
+%%++    Nonnull(nonnull_: nat) : Nonnull?
+%%++  END obj
+
+% References (to objects)
+obj : DATATYPE 
+ BEGIN 
+  Obj(obj_ : string) : Obj?
+ END obj
+
+% Right values: either references to the store (i.e locations)
+% or values
+rval : DATATYPE
+  BEGIN
+   IMPORTING obj
+    Oref(obj_	: obj)	: Oref?
+    Ival(nat_	: nat)	: Ival?
+    Bval(bool_	: bool)	: Bval?
+  END rval
+
+% Java primitive type
+primitivetype : DATATYPE
+  BEGIN
+    BoolType	: BoolType?
+    IntType	: IntType?
+  END primitivetype
+
+% Java type: a primitive type or a class type
+jtype : DATATYPE
+  BEGIN
+  IMPORTING primitivetype
+    PrimType(primitivetype_ 	: primitivetype): PrimType?
+    ClType(classtype_ 		: string)	: ClType?
+  END jtype
+
+% Field identifiers can be seen as field declarations. They record 
+% the class type in declarations since for fields identifiers there 
+% is a statically type resolved overloading.
+%
+% A field identifier is composed of the name of the field and
+% its static type. Hence, given a declaration A a = new B() in
+% the class C, the field a will be representated as FId(a,A).
+fieldidentifier : DATATYPE
+  BEGIN
+  IMPORTING jtype
+    FId(identifier_	: string, 
+	jtype_		: jtype) : FId?
+  END fieldidentifier
+
+% Left values can be seen as field accesses. 
+% Suppose you have:
+% class D {
+%   boolean b = true;
+% }
+% and some instance of class D was created whose
+% address in memory is 1. So, the access to the field
+% b of this instance can be represented as
+% Lval(1,FId("b",PrimType(BoolType)))
+% 
+lval : DATATYPE
+  BEGIN
+  IMPORTING obj,fieldidentifier
+     Lval(nonnullobj_		: obj,
+	  fieldidentifier_	: fieldidentifier) : Lval?
+  END lval
+
+% An Java memory event
+event : DATATYPE 
+  BEGIN
+  IMPORTING obj,lval, rval
+    Lock(tlck	: nat, olck : obj)		: Lock?
+    Unlock(tulck: nat, oulck: obj)		: Unlock?
+    Use(tu 	: nat, lu : lval, ru : rval) 	: Use?
+    Assign(ta	: nat, la : lval, ra : rval) 	: Assign?
+    Store(ts	: nat, ls : lval, rs : rval)	: Store?
+    Write(tw	: nat, lw : lval, rw : rval)	: Write?
+    Read (tr	: nat, lr : lval, rr : rval) 	: Read?
+    Load(tl	: nat, ll : lval, rl : rval) 	: Load?
+  END event
+
+auxiliary_lemmas [T: TYPE]: THEORY
+ BEGIN
+ IMPORTING event
+
+ adding_singleton : LEMMA
+   FORALL(a,b,c:set[T]):
+	( singleton?[T](c) AND b=union(c,a) )
+	IMPLIES
+	b = add(the(c),a)
+
+ adding_singleton_subset : LEMMA
+   FORALL(a,b:set[T]):
+	( singleton?[T](difference(b,a)) AND subset?[T](a,b) )
+	IMPLIES
+	b = add(the(difference(b,a)),a)
+
+ union_subset : LEMMA
+   FORALL(a:T,b,c:set[T]): 
+    ( member(a,c) AND subset?(b,c) )
+    IMPLIES
+    subset?(add(a,b),c)
+END auxiliary_lemmas
+
+
+events : THEORY
+BEGIN
+ IMPORTING event
+ % Defining a partial order for events  
+ le_boolean: [boolean,boolean -> boolean] =
+  LAMBDA(b1,b2:boolean) : IF b1 THEN TRUE ELSE NOT b2 ENDIF
+
+ le_string(s1:string,s2:string): RECURSIVE boolean =
+	IF s1`length=0 THEN true
+	ELSE IF s2`length=0 THEN false
+	     ELSE IF <(code(s1`seq(0)),code(s2`seq(0))) THEN true
+		  ELSE IF >(code(s1`seq(0)),code(s2`seq(0))) THEN false
+		       ELSE LET l1=s1`length-1,
+				l2=s2`length-1 IN
+				le_string(
+					(# length := l1,
+				   	   seq := LAMBDA(n:below(l1)):s1`seq(n+1)
+					#),
+					(# length := l2,
+				   	   seq := LAMBDA(n:below(l2)):s2`seq(n+1)
+					#)) ENDIF
+                  ENDIF
+	     ENDIF
+	ENDIF
+ MEASURE length(s1)+length(s2)
+ 
+ gt_string(s1:string,s2:string): boolean = NOT le_string(s1,s2)
+ eq_string(s1:string,s2:string): boolean = le_string(s1,s2) AND le_string(s2,s1)
+ ge_string(s1:string,s2:string): boolean = gt_string(s1,s2) OR eq_string(s1,s2)
+ lt_string(s1:string,s2:string): boolean = NOT ge_string(s1,s2)
+ 
+ le_obj(o1:obj,o2:obj) : bool =
+  le_string(obj_(o1),obj_(o2))
+
+ gt_obj(o1:obj,o2:obj): boolean = NOT le_obj(o1,o2)
+ eq_obj(o1:obj,o2:obj): boolean = le_obj(o1,o2) AND le_obj(o2,o1)
+ ge_obj(o1:obj,o2:obj): boolean = gt_obj(o1,o2) OR eq_obj(o1,o2)
+ lt_obj(o1:obj,o2:obj): boolean = NOT ge_obj(o1,o2)
+
+ le_fieldidentifier(f1:fieldidentifier,f2:fieldidentifier) : bool =
+  IF lt_string(identifier_(f1),identifier_(f2)) THEN true
+    ELSE IF gt_string(identifier_(f1),identifier_(f2)) THEN false
+	 ELSE true ENDIF
+    ENDIF
+
+ le_lval(l1:lval,l2:lval) : bool =
+  IF lt_obj(nonnullobj_(l1),nonnullobj_(l2)) THEN true
+    ELSE IF gt_obj(nonnullobj_(l1),nonnullobj_(l2)) THEN false
+ 	ELSE le_fieldidentifier(fieldidentifier_(l1),fieldidentifier_(l2)) ENDIF
+    ENDIF
+
+ gt_lval(l1:lval,l2:lval): boolean = NOT le_lval(l1,l2)
+ eq_lval(l1:lval,l2:lval): boolean = le_lval(l1,l2) AND le_lval(l2,l1)
+ ge_lval(l1:lval,l2:lval): boolean = gt_lval(l1,l2) OR eq_lval(l1,l2)
+ lt_lval(l1:lval,l2:lval): boolean = NOT ge_lval(l1,l2)
+
+ le_rval(r1:rval,r2:rval) : bool =
+  IF Bval?(r1) THEN
+    IF Bval?(r2) THEN le_boolean(bool_(r1),bool_(r2))
+    ELSE true ENDIF
+  ELSE IF Ival?(r1) THEN
+	IF Bval?(r2) THEN false
+	ELSE IF Ival?(r2) THEN <=(nat_(r1),nat_(r2))
+             ELSE true ENDIF
+	ENDIF
+       ELSE IF Oref?(r2) THEN le_obj(obj_(r1),obj_(r2))
+	    ELSE false ENDIF
+       ENDIF
+  ENDIF
+
+ gt_rval(r1:rval,r2:rval): boolean = NOT le_rval(r1,r2)
+ eq_rval(r1:rval,r2:rval): boolean = le_rval(r1,r2) AND le_rval(r2,r1)
+ ge_rval(r1:rval,r2:rval): boolean = gt_rval(r1,r2) OR eq_rval(r1,r2)
+ lt_rval(r1:rval,r2:rval): boolean = NOT ge_rval(r1,r2)
+  
+ le_event(e1:event,e2:event) : bool =
+  IF Assign?(e1) THEN 
+	IF Assign?(e2) THEN
+	  IF lt_lval(la(e1),la(e2)) THEN true
+	  ELSE IF gt_lval(la(e1),la(e2)) THEN false
+              ELSE le_rval(ra(e1),ra(e2)) ENDIF
+         ENDIF 
+       ELSE true ENDIF
+  ELSE 
+	IF Load?(e1) THEN
+	  IF Assign?(e2) THEN false
+         ELSE 	IF Load?(e2) THEN
+		 IF lt_lval(ll(e1),ll(e2)) THEN true
+		 ELSE IF gt_lval(ll(e1),ll(e2)) THEN false
+		      ELSE le_rval(rl(e1),rl(e2)) ENDIF
+		 ENDIF
+		ELSE true ENDIF
+	  ENDIF
+	ELSE 
+	  IF Lock?(e1) THEN 
+	    IF Assign?(e2) OR Load?(e2) THEN false
+	    ELSE IF Lock?(e2) THEN le_obj(olck(e1),olck(e2))
+                ELSE true ENDIF
+	    ENDIF
+	  ELSE
+	   IF Read?(e1) THEN
+	      IF Assign?(e2) OR Load?(e2) OR Lock?(e2) THEN false
+      	      ELSE IF Read?(e2) THEN
+		     IF lt_lval(lr(e1),lr(e2)) THEN true
+		     ELSE IF gt_lval(lr(e1),lr(e2)) THEN false
+		          ELSE le_rval(rr(e1),rr(e2)) ENDIF
+		     ENDIF
+                  ELSE true ENDIF
+             ENDIF
+           ELSE
+	      IF Store?(e1) THEN
+		IF Assign?(e2) OR Load?(e2) OR Lock?(e2) OR Read?(e2) THEN false
+		ELSE IF Store?(e2) THEN
+			IF lt_lval(ls(e1),ls(e2)) THEN true
+			ELSE IF gt_lval(ls(e1),ls(e2)) THEN false
+			     ELSE le_rval(rs(e1),rs(e2)) ENDIF
+			ENDIF
+		     ELSE true ENDIF
+		ENDIF
+	      ELSE
+		IF Unlock?(e1) THEN
+		  IF Assign?(e2) OR Load?(e2) OR Lock?(e2) OR Read?(e2) OR Store?(e2) THEN false
+		  ELSE IF Unlock?(e2) THEN le_obj(oulck(e1),oulck(e2))
+		       ELSE true ENDIF
+		  ENDIF
+		ELSE
+		 IF Use?(e1) THEN
+		    IF Assign?(e2) OR Load?(e2) OR Lock?(e2) OR Read?(e2) OR Store?(e2) OR Unlock?(e2) THEN false
+		    ELSE IF Use?(e2) THEN
+			   IF lt_lval(lu(e1),lu(e2)) THEN true
+			   ELSE IF gt_lval(lu(e1),lu(e2)) THEN false
+				ELSE le_rval(ru(e1),ru(e2)) ENDIF
+			   ENDIF
+			 ELSE true ENDIF
+		    ENDIF
+		 ELSE %Write?(e1)
+		    IF Write?(e2) THEN
+		      IF lt_lval(lw(e1),lw(e2)) THEN true
+		      ELSE IF gt_lval(lw(e1),lw(e2)) THEN false
+			   ELSE le_rval(rw(e1),rw(e2)) ENDIF
+		      ENDIF
+		    ELSE false ENDIF
+                 ENDIF
+                ENDIF
+              ENDIF
+	   ENDIF
+	  ENDIF
+	ENDIF
+  ENDIF
+END events
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% --------- End of Part 1 ------------ %%%%%%%%%%%
+%%%%%%%%%%%%% ------------------------------------ %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% -------------- Part 2 -------------- %%%%%%%%%%%
+% This part covers the laws governing Event spaces.%
+%%%%%%%%%%%% ------------------------------------ %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+evspace : THEORY
+BEGIN
+IMPORTING events
+
+ thread	: TYPE = nat
+
+ th	: VAR thread
+ l 	: VAR lval
+ v 	: VAR rval
+ p 	: VAR obj 
+ a,b,e,f,g : VAR event
+
+
+%%%%%%%%%%%%%--
+   % is e a thread action done by some thread th ?
+   % Notice that read and write actions on the same thread 
+   % must be totally ordered
+   Alpha? (th,e) : bool =
+	CASES e OF
+	Lock(tt,oo)	: tt=th,
+	Unlock(tt,oo)	: tt=th,
+	Use(tt,ll,vv)	: tt=th,
+	Assign(tt,ll,vv): tt=th,
+	Load(tt,ll,vv)	: tt=th,
+	Store(tt,ll,vv)	: tt=th,
+	Read(tt,ll,vv)	: FALSE,
+	Write(tt,ll,vv)	: FALSE
+	ENDCASES
+
+   % is e a lock-unlock action on some object p ?
+   % Notice that lock and unlock actions on the same object 
+   % must be totally ordered
+   Beta?(p,e) : bool =
+	CASES e OF
+	Lock(tt,pp) 	: pp=p,
+	Unlock(tt,pp)	: pp=p,
+	Use(tt,ll,vv)	: FALSE,
+	Assign(tt,ll,vv): FALSE,
+	Load(tt,ll,vv)	: FALSE,
+	Store(tt,ll,vv)	: FALSE,
+	Read(tt,ll,vv)	: FALSE,
+	Write(tt,ll,vv)	: FALSE
+	ENDCASES
+
+   % is e an event produced by the main memory ?
+   % Notice that memory actions on the same variables must be
+   % totally ordered
+   Betal?(l,e) : bool =
+	CASES e OF
+	Lock(tt,pp) 	: FALSE,
+	Unlock(tt,pp)	: FALSE,
+	Use(tt,ll,vv)	: FALSE,
+	Assign(tt,ll,vv): FALSE,
+	Load(tt,ll,vv)	: FALSE,
+	Store(tt,ll,vv)	: FALSE,
+	Read(t,ll,v)	: ll=l,
+	Write(t,ll,v)	: ll=l
+	ENDCASES
+
+   % An event relation is a set of events
+   evtrelation : TYPE = setof[[event,event]]
+
+   % The usual definition of carrier of some relation
+   Carrier(E:evtrelation) : setof[event] = 
+	{ e | E(e,e) }
+
+   % Is the set of events A totally ordered with respect to E ?
+   TotalIn (A:setof[event])(E:evtrelation) : bool = 
+	FORALL(x,y:(A)) : 
+	( E(x,y) OR E(y,x) )
+
+
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   %%-- Syncrhonization functions
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+
+   % Definition: A synchronization (f,g) : Y <=> Z is a pair of
+   % function f : Y -> Z and g : Z -> Y such that f is injective and 
+   % and monotonic with downward close codomain and g is partial
+
+   %% Synchronization (ReadOf,LoadOf)
+   ReadOf 	: [evtrelation,event -> event]
+   LoadOf 	: [evtrelation,event -> event]
+
+   %% Synchronization (StoreOf,WriteOf)
+   StoreOf 	: [evtrelation,event -> event]
+   WriteOf 	: [evtrelation,event -> event]
+
+   % The Java specification language actually requires that any
+   % read (store) action be completed with a load (write) action, i.e,
+   % the second component of the syncrhonization must be total; those
+   % constraints are not added because they could be used to capture
+   % incomplete event spaces. For instance, if not so, the following
+   % event spaces would be disallowed :
+   % 1. { Read(th,l,v) } 
+   % 2. { Assign(th,l,v) <= Store(th,l,v) }
+
+   %% Synchronization (Lock,Unlock)
+   LockOf 	: [evtrelation,event -> event]
+   UnlockOf 	: [evtrelation,event -> event]
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%----
+
+
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%----
+   % is funct monotonic ?
+   monotonic?(E:evtrelation)
+	( funct:[evtrelation,event -> event],
+	  parm?:[event -> bool]
+	) : bool =
+	FORALL(e1,e2:(parm?),e3,e4:event) :
+		E(e1,e2) AND
+		funct(E,e1) = e3 AND
+		funct(E,e2) = e4 
+		IMPLIES
+		E(e3,e4)
+
+   % is funct injective ?
+   injective?(E:evtrelation)
+	( funct:[evtrelation,event -> event],
+	  parm?:[event -> bool]
+	) : bool =
+	FORALL(e1,e2:(parm?)) : 
+		funct(E,e1) = funct(E,e2)
+		IMPLIES
+  		e1 = e2	
+
+   % is funct downward closed ?
+   closed?(E:evtrelation)
+	( funct:[evtrelation,event -> event],
+	  parm?:[event -> bool],
+	  rang?:[event -> bool]
+	) : bool =
+	FORALL(e1:(parm?),e3,e4:event) : 
+		rang?(e4) AND
+		funct(E,e1) = e3 AND
+		E(e3,e4)
+		IMPLIES
+		EXISTS (e2:(parm?)) : 
+			funct(E,e2) = e4
+
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   %%-- End of syncrhonization functions
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+
+
+ 
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   %%-- Rules defining what an event space is
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+
+   %% from rule1? to rule rule3? total conditions on event spaces are
+   %% expressed
+   rule1?(E:evtrelation) : bool =
+	FORALL(t:thread) :
+	TotalIn( { e | Carrier(E)(e) AND Alpha?(t,e) } )(E)
+
+
+   rule2o?(E:evtrelation) : bool = 
+	FORALL(o:obj) :
+	TotalIn( { e | Carrier(E)(e) AND Beta?(o,e) } )(E)
+
+
+   rule2l?(E:evtrelation) : bool = 
+	FORALL(l:lval) : 
+	TotalIn( { e | Carrier(E)(e) AND Betal?(l,e) } )(E)
+
+
+   rule3?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL (A:(Assign?),L:(Load?)) :
+		( A=Assign(t,l,r) AND L=Load(t,l,s) AND
+		  E(A,L)
+		)
+		IMPLIES
+		  LET S=Store(t,l,s) IN
+		  E(A,S) AND 
+		  E(S,L)
+		
+   rule4?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL (S1:(Store?),S2:(Store?)) :
+		( S1=Store(t,l,r) AND S2=Store(t,l,s) )
+		IMPLIES
+		r /= s
+		IMPLIES 
+		E(S1,S2) 
+		IMPLIES
+		  LET A=Assign(t,l,s) IN
+		  E(S1,A) AND 
+		  E(A,S2)
+		
+   rule4b?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL (L:(Load?),S:(Store?)) :
+		( L=Load(t,l,r) AND S=Store(t,l,s) )
+		IMPLIES
+		r /= s
+		IMPLIES 
+		E(L,S) 
+		IMPLIES
+		  LET A=Assign(t,l,s) IN
+		  E(L,A) AND 
+		  E(A,S)
+		
+   rule5?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r:rval) : 
+	 FORALL(U:(Use?)) :
+		( U=Use(t,l,r) AND Carrier(E)(U) )
+		IMPLIES
+                LET L=Load(t,l,r), A=Assign(t,l,r) IN
+		 E(A,U)
+		 OR
+		 E(L,U)
+
+   rule6?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r:rval) : 
+	 FORALL(S:(Store?)) : 
+		(S=Store(t,l,r) AND Carrier(E)(S))
+		IMPLIES
+		  LET A=Assign(t,l,r) IN
+		  E(A,S)
+
+   rule7?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL(A:(Assign?), U:(Use?)) :
+		( A=Assign(t,l,r) AND U=Use(t,l,s) AND 
+		  r/= s AND E(A,U)
+		)
+		IMPLIES
+		  LET A1=Assign(t,l,s), L=Load(t,l,s) IN
+		   ( E(A,A1) AND E(A1,U) AND A/=A1 )
+		   OR 
+		   ( E(A,L) AND E(L,U) )
+
+   rule8?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL(L:(Load?), U:(Use?)) :
+		( L=Load(t,l,r) AND U=Use(t,l,s) AND 
+		  r/=s AND E(L,U) 
+		)
+		IMPLIES
+		 LET A=Assign(t,l,s), L1=Load(t,l,s) IN
+		   ( E(L,A) AND E(A,U) )
+		   OR
+		   ( E(L,L1) AND E(L1,U) )
+
+   rule9?(E:evtrelation) : bool =
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL(A:(Assign?), S:(Store?)) :
+		( A=Assign(t,l,r) AND S=Store(t,l,s) AND 
+ 		  r/=s AND E(A,S)
+		)
+		IMPLIES
+		  LET A1=Assign(t,l,s) IN
+		  E(A,A1) AND E(A1,S)
+
+   rule10?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r:rval) : 
+	 FORALL(L:(Load?)) :
+		( L=Load(t,l,r) AND Carrier(E)(L) )
+		IMPLIES
+		LET R=ReadOf(E,L) IN
+		E(R,L)
+
+   rule11?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r:rval) : 
+	 FORALL(W:(Write?)) :
+		( W=Write(t,l,r) AND Carrier(E)(W) )
+		IMPLIES
+		LET S = StoreOf(E,W) IN
+		E(S,W)
+
+   rule12?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r,s:rval) : 
+	 FORALL(S:(Store?),L:(Load?)) :
+		( L=Load(t,l,s) AND S=Store(t,l,s) AND 
+		  E(S,L)
+		)
+		IMPLIES
+		E(WriteOf(E,S),ReadOf(E,L)) 
+
+   rule13?(E:evtrelation) : bool = 
+	FORALL(t:thread,p:obj) : 
+	 FORALL(UL:(Unlock?)) :
+		( UL=Unlock(t,p) AND Carrier(E)(UL) )
+		IMPLIES 
+		E(LockOf(E,UL),UL)
+
+   rule14?(E:evtrelation) : bool = 
+	FORALL(t,s:thread,p:obj) : 
+	 FORALL(LO1,LO2:(Lock?)) :
+		( LO1=Lock(t,p) AND LO2=Lock(s,p) AND t /= s )
+		IMPLIES
+		E(LO1,LO2) 
+		IMPLIES 
+		E(UnlockOf(E,LO1),LO2)
+
+   rule15?(E:evtrelation) : bool = 
+	FORALL(t:thread,p:obj,l:lval,r:rval) : 
+	 FORALL(A:(Assign?), UL:(Unlock?)) :
+		( A=Assign(t,l,r) AND UL=Unlock(t,p) )
+		IMPLIES
+		E(A,UL)
+		IMPLIES
+		LET W=Write(t,l,r) IN
+		 LET S=StoreOf(E,W) IN
+		 E(A,S) AND E(S,W) AND E(W,UL)
+			
+   rule16?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,p:obj,r:rval) : 
+	 FORALL(LO:(Lock?)) : 
+	  FORALL(U:(Use?)) :
+		( LO=Lock(t,p) AND U=Use(t,l,r) )
+		IMPLIES
+		E(LO,U)
+		IMPLIES
+		LET R=Read(t,l,r), A=Assign(t,l,r) IN
+		 LET L=LoadOf(E,R) IN
+		  ( E(LO,A) AND E(A,U) )
+		  OR
+		  ( E(L,R) AND E(R,L) AND E(L,U) )
+
+   rule17?(E:evtrelation) : bool = 
+	FORALL(t:thread,l:lval,r:rval,p:obj) : 
+	 FORALL(LO:(Lock?),S:(Store?)) :
+		(LO=Lock(t,p) AND S=Store(t,l,r))
+		IMPLIES
+		E(LO,S)
+		IMPLIES
+		LET A=Assign(t,l,r) IN
+		E(LO,A) AND E(A,S)
+
+
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   %%-- End of rules
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+
+
+   % ClosedDown and ClosedUp together give you reflexivite
+   ClosedDown?(E:evtrelation) : bool = 
+     FORALL(e,f) : 
+	Carrier(E)(e) AND Carrier(E)(f)
+	 IMPLIES
+	   E(e,f)
+	    IMPLIES
+	      E(e,e)
+
+   % - %
+   ClosedUp?(E:evtrelation) : bool = 
+     FORALL(e,f) : 
+	Carrier(E)(e) AND Carrier(E)(f)
+	 IMPLIES
+	   E(e,f)
+	    IMPLIES
+		E(f,f)
+
+   % We consider finite event spaces only
+   FiniteHist?(E:evtrelation) : bool = 
+	FORALL(e) : is_finite[event]( { (d:event) | Carrier(E)(d) AND Carrier(E)(e) AND E(d,e) } )
+
+   % predicate 'being an event space'
+   IsEventSpace?(E:evtrelation) : bool =
+	rule1?(E)  AND
+	rule2o?(E) AND 
+	rule2l?(E) AND 
+	rule3?(E) AND 
+	rule4?(E) AND 
+	rule4b?(E) AND 
+	rule5?(E) AND 
+	rule6?(E) AND 
+ 	rule7?(E) AND 
+	rule8?(E) AND 
+	rule9?(E) AND 
+	rule10?(E) AND 
+	rule11?(E) AND 
+	rule12?(E) AND 
+	rule13?(E) AND 
+	rule14?(E) AND 
+	rule15?(E) AND 	
+	rule16?(E) AND
+	rule17?(E) AND
+	transitive?(E) AND
+	antisymmetric?(E) AND 
+	ClosedDown?(E) AND 
+	ClosedUp?(E) AND 
+	FiniteHist?(E)
+	
+    %%--
+    event_spaces_have_finite_history: JUDGEMENT
+	(IsEventSpace?) SUBTYPE_OF (FiniteHist?)
+	
+    %%--
+%ncc    finite_history_between_events: LEMMA
+%ncc	FORALL(E:(IsEventSpace?),e,f:event) :
+%ncc	is_finite[event]({ (d:event) | Carrier(E)(e) AND Carrier(E)(f) AND Carrier(E)(d) AND 
+%ncc				E(e,d) AND E(d,f) } )
+
+
+
+   % 'E' is an event space and 'a' is an event. We're finding all Rs
+   % extending (R = E+a) such that R is an event space again.
+   AdjointSet(E:(IsEventSpace?),a) : setof[evtrelation] = 
+	{ (R:evtrelation) |
+                % If a was already in E, R and E would be similar;
+                % all these R's are ruled out
+		NOT(member(a,Carrier(E))) AND
+
+                % R must be an event space again
+		IsEventSpace?(R) AND
+
+                % R should be able to be calculated from E and a
+		Carrier(R) = union(Carrier(E),singleton(a)) AND 
+
+                % R preserves E
+		FORALL(e,f) :
+		(	( Carrier(E)(e) AND Carrier(E)(f) )
+			IMPLIES 
+			( R(e,f) IFF E(e,f) )
+		) AND
+
+		% for y in X' and x', if x' <=' y then y = x
+		FORALL(e,f) :
+		(
+		    ( Carrier(R)(f) AND difference(Carrier(R),Carrier(E))(e) AND R(e,f) )
+		    IMPLIES
+		    f=e
+		)
+        }
+
+   % E+a is calculated by picking some element from AdjointSet(E,a)
+   Plus_Event(E:(IsEventSpace?),a) : evtrelation = 
+	IF nonempty?(AdjointSet(E,a)) 
+	THEN choose(AdjointSet(E,a)) 
+	ELSE emptyset
+	ENDIF
+
+
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   %%-- Syncrhonization functions
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   % 
+   ReadOf_monotonic	: bool =
+	FORALL(E:(IsEventSpace?)) : monotonic?(E)(ReadOf,Load?)
+   ReadOf_closed	: bool =
+	FORALL(E:(IsEventSpace?)) : closed?(E)(ReadOf,Load?,Read?)
+   ReadOf_injective	: bool =
+	FORALL(E:(IsEventSpace?)) : injective?(E)(ReadOf,Load?)
+
+   LoadOf_monotonic	: bool =
+	FORALL(E:(IsEventSpace?)) : monotonic?(E)(LoadOf,Read?)  
+   LoadOf_injective	: bool =
+	FORALL(E:(IsEventSpace?)) : injective?(E)(LoadOf,Read?)
+ 
+   %
+   StoreOf_monotonic	: bool =
+	FORALL(E:(IsEventSpace?)) : monotonic?(E)(StoreOf,Write?)
+   StoreOf_closed	: bool =
+	FORALL(E:(IsEventSpace?)) : closed?(E)(StoreOf,Write?,Store?)
+   StoreOf_injective	: bool =
+	FORALL(E:(IsEventSpace?)) : injective?(E)(StoreOf,Write?)
+
+   WriteOf_monotonic	: bool =
+	FORALL(E:(IsEventSpace?)) : monotonic?(E)(WriteOf,Store?)
+   WriteOf_injective	: bool =
+	FORALL(E:(IsEventSpace?)) : injective?(E)(WriteOf,Store?)
+
+   %
+   LockOf_monotonic	: bool =
+	FORALL(E:(IsEventSpace?)) : monotonic?(E)(LockOf,Unlock?)
+   LockOf_closed	: bool =
+	FORALL(E:(IsEventSpace?)) : closed?(E)(LockOf,Unlock?,Lock?)
+   LockOf_injective	: bool =
+	FORALL(E:(IsEventSpace?)) : injective?(E)(LockOf,Unlock?)
+
+   UnlockOf_monotonic	: bool =
+	FORALL(E:(IsEventSpace?)) : monotonic?(E)(UnlockOf,Lock?)
+   UnlockOf_closed	: bool =
+	FORALL(E:(IsEventSpace?)) : closed?(E)(UnlockOf,Lock?,Unlock?)
+   UnlockOf_injective	: bool =
+	FORALL(E:(IsEventSpace?)) : injective?(E)(UnlockOf,Lock?)
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+   %%-- End of syncrhonization functions
+   %%%%%%%%%%%%%%%%--%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% --------- End of Part 2 ------------ %%%%%%%%%%%
+%%%%%%%%%%%%% ------------------------------------ %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% -------------- Part 3 -------------- %%%%%%%%%%%
+% This third part covers slicing event spaces
+%%%%%%%%%%%%% ------------------------------------ %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   %%% -- end of some auxiliary functions -- %%%
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+   %%-- termination function for AliasAux?
+   Peak(E:(IsEventSpace?),e) : setof[event] =
+	{ (d:event) | Carrier(E)(d) AND Carrier(E)(e) AND E(d,e) }
+
+   %%-- termination function for SetW?
+   Flat(E:(IsEventSpace?),e,f) : setof[event] =
+	{ (d:event) | Carrier(E)(d) AND Carrier(E)(e) AND Carrier(E)(f) AND E(e,d) AND E(d,f) }
+
+   %%--
+   peaks_are_finite : LEMMA
+    FORALL(E:(IsEventSpace?),e) :
+	Carrier(E)(e)
+	IMPLIES
+	is_finite[event]( Peak(E,e) )
+	
+   %%--
+   peaks_as_difference : LEMMA
+    FORALL(E:(IsEventSpace?),e,f) :
+	( Carrier(E)(e) AND Carrier(E)(f) AND E(f,e) )
+	IMPLIES
+	Peak(E,e) = union(Peak(E,f),difference(Peak(E,e),Peak(E,f)))
+	
+   %%--
+   peaks_extension_nonempty : LEMMA
+    FORALL(E:(IsEventSpace?),e,f) :
+	( Carrier(E)(e) AND Carrier(E)(f) AND E(f,e) AND f/=e )
+	IMPLIES
+	nonempty?[event](difference(Peak(E,e),Peak(E,f)))
+	
+   %%--
+   card_of_sub_peaks: LEMMA
+    FORALL(E:(IsEventSpace?),e,f) :
+	( Carrier(E)(e) AND Carrier(E)(f) AND E(f,e) AND f/=e )
+	IMPLIES
+	Card[event](Peak(E,f)) < Card[event](Peak(E,e))
+
+   %%--
+   flats_are_finite : LEMMA
+    FORALL(E:(IsEventSpace?),e1,e2:event) :
+	( Carrier(E)(e1) AND Carrier(E)(e2) )% AND E(e1,e2) )
+	IMPLIES
+	is_finite[event]( Flat(E,e1,e2) )
+
+
+   flats_difference_is_finite : LEMMA
+    FORALL(E:(IsEventSpace?),e1,e2,e3:event) :
+	( Carrier(E)(e1) AND Carrier(E)(e2) AND Carrier(E)(e3) AND E(e1,e2) AND E(e2,e3) )
+	IMPLIES
+	is_finite[event]( { e | Carrier(E)(e) AND 
+                                      (	( E(e1,e) AND E(e,e2) AND e /= e2 ) OR
+					( E(e1,e) AND E(e,e3) AND NOT E(e2,e) AND NOT E(e,e2) )
+				    ) })
+   %%--
+   flats_as_difference : LEMMA
+    FORALL(E:(IsEventSpace?),e1,e2,e3:event) :
+	( Carrier(E)(e1) AND Carrier(E)(e2) AND Carrier(E)(e3) AND E(e1,e2) AND E(e2,e3) )
+	IMPLIES
+	Flat(E,e1,e3) = union( Flat(E,e2,e3), 
+				{ e | Carrier(E)(e) AND 
+                                      (	( E(e1,e) AND E(e,e2) AND e /= e2 ) OR
+					( E(e1,e) AND E(e,e3) AND NOT E(e2,e) AND NOT E(e,e2) )
+				    ) })
+
+   %%-- 
+   flats_extension_nonempty : LEMMA
+    FORALL(E:(IsEventSpace?),e1,e2,e3:event) : 
+	( Carrier(E)(e1) AND Carrier(E)(e2) AND Carrier(E)(e3) AND E(e1,e2) AND E(e2,e3) )
+	IMPLIES
+	  e1 /= e2
+	    IMPLIES
+		nonempty?[event]({ e | Carrier(E)(e) AND 
+                                      (	( E(e1,e) AND E(e,e2) AND e /= e2 ) OR
+					( E(e1,e) AND E(e,e3) AND NOT E(e2,e) AND NOT E(e,e2) )
+				    ) })
+
+   %%--
+   card_of_sub_flats: LEMMA
+    FORALL(E:(IsEventSpace?),e1,e2,e3:event) :
+	( Carrier(E)(e1) AND Carrier(E)(e2) AND Carrier(E)(e3) AND 
+	  E(e1,e2) AND E(e2,e3) AND e1/=e2
+	)
+	IMPLIES
+	Card[event](Flat(E,e2,e3)) < Card[event](Flat(E,e1,e3))
+	
+
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   %%%%%%% ----------------------------- %%%%%%%
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   % class Y { I i = new I(); }
+   %
+   % class MAIN {
+   %    Y y = new Y();
+   % }
+   % ...
+   % MAIN main = new MAIN();
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   %%%%%%% ----------------------------- %%%%%%%
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+   t, z, main	: VAR obj
+   cls_X, cls_Y, cls_T, cls_Z, cls_MAIN	: VAR string
+   jtp_X, jtp_Y, jtp_T, jtp_Z, jtp_MAIN	: VAR jtype
+   v1,v2		: VAR rval
+   th1,th2,
+   thread1, thread2	: VAR thread
+
+   % Checks that at the moment when w occurs, y references
+   % the same variable as x, as consequence of an assignment
+   % to y from an alias of x
+   AliasAux?(E:(IsEventSpace?),y,x:obj,w:(Carrier(E))) : RECURSIVE bool =
+   Write?(w) AND
+   (
+	% first case: the writing to y is from the variable x
+	 (
+	  EXISTS(x_:obj,y_in_w2:string,jtp_Y2:jtype,thread2,main) :
+	 	LET w2= Write(thread2,
+			Lval(main,FId(y_in_w2,jtp_Y2)),
+			Oref(x_) ) IN
+		% 1.
+		Obj(y_in_w2) = y AND x_ = x AND
+		Carrier(E)(w2) AND
+	  	E(w2,w) AND
+
+		% 2.
+		NOT(EXISTS(y_in_w1:string,jtp_Y1:jtype,thread1,t) :
+		  LET w1=Write(thread1,
+			Lval(main,FId(y_in_w1,jtp_Y1)), 
+			Oref(t) ) IN
+		Obj(y_in_w1) = y AND 	% y_in_w1 = y_in_w2 is implied
+					% for the previous equality
+		Carrier(E)(w1) AND
+		E(w2,w1) AND E(w1,w) AND
+
+		w1 /= w AND
+		
+		NOT(AliasAux?(E,x,t,w1) or AliasAux?(E,t,x,w1))
+	 	)
+	)
+	% second case : the writing to y is from some variable z
+	% other than x. Additionally one must check that z was an
+        % alias of x before w occurred
+	OR
+	(
+	 EXISTS(y_in_w2:string,jtp_Y2:jtype,thread2,main,z) :
+	 	LET w2=Write(thread2, 
+			Lval(main,FId(y_in_w2,jtp_Y2)),
+			Oref(z) ) IN
+	 	Obj(y_in_w2) = y AND
+		Carrier(E)(w2) AND
+
+	 	E(w2,w) AND z/=x AND
+
+		%% added for termination
+		w2 /= w AND
+	  
+	 	NOT(EXISTS(y_in_w1:string,jtp_Y2:jtype,thread1,t) :
+			LET w1=Write(thread1,
+				Lval(main,FId(y_in_w1,jtp_Y2)),
+				Oref(t) ) IN
+			Carrier(E)(w1) AND
+			
+			Obj(y_in_w1) = y AND
+			E(w2,w1) AND E(w1,w) AND
+			w1 /= w AND
+
+			NOT(AliasAux?(E,x,t,w1) OR AliasAux?(E,t,x,w1))
+		) AND
+	 	(AliasAux?(E,y,z,w2) OR AliasAux?(E,z,y,w2))
+	)
+   )
+   MEASURE Card(Peak(E,w))
+
+
+   % Checks that at the moment when w occurs, y references
+   % the same variable as x, as consequence of an assignment
+   % to y from an alias of x or visceversa
+   Alias?(E:(IsEventSpace?),y,x:obj,w:(Carrier(E))) : bool =
+	Write?(w) AND ( AliasAux?(E,y,x,w) OR AliasAux?(E,x,y,w) )
+
+
+   % formalises the notion of aliasing flow dependence
+   SetW?(E:(IsEventSpace?),w,r:(Carrier(E))) : RECURSIVE bool =
+    Write?(w) AND
+    Read?(r) AND
+    LET lvw = lw(w),
+	lvr = lr(r) IN
+ 
+    LET (y,fld_i_in_y)   = (nonnullobj_(lvw),fieldidentifier_(lvw)),
+        (x,fld_i_in_x)   = (nonnullobj_(lvr),fieldidentifier_(lvr)) IN
+ 
+    LET (i_in_y,jtp_i_in_y) = (identifier_(fld_i_in_y),jtype_(fld_i_in_y)),
+        (i_in_x,jtp_i_in_x) = (identifier_(fld_i_in_x),jtype_(fld_i_in_x)) IN
+   (
+	i_in_y = i_in_x AND
+	jtp_i_in_y = jtp_i_in_x
+   )
+   AND
+   (
+     %%- first case
+     (
+	y = x	AND
+        E(w,r)	AND
+        NOT( EXISTS(jtp_I:jtype,v1,th1,z) :
+		LET i_in_w1 = i_in_x in
+   		LET w1 = Write(th1,Lval(z,FId(i_in_w1,jtp_I)),v1) IN
+		Carrier(E)(w1) AND
+   		E(w,w1) AND w1 /= w AND E(w1,r) AND SetW?(E,w1,r) AND
+   		Alias?(E,x,z,w1) %% Card[event](Peak(E, w1)) < Card[event](Peak(E, w))
+   	 )
+     )
+     OR
+     %%- second case	
+     (	
+        y /= x AND
+        E(w,r) AND
+        Alias?(E,x,y,w)	AND
+        NOT( EXISTS(jtp_I:jtype,v1,th1,z) :
+		LET i_in_z = i_in_x IN
+   		LET w1 = Write(th1,Lval(z,FId(i_in_z,jtp_I)),v1)  IN
+		Carrier(E)(w1) AND
+   		E(w,w1) AND w1 /= w AND E(w1,r) AND SetW?(E,w1,r) AND
+   		Alias?(E,x,z,w1)
+   	 )
+      )
+      OR
+      %%- third case
+      (
+   	y /= x AND
+   	NOT(E(w,r)) AND NOT(E(r,w)) AND
+   	Alias?(E,x,y,w)
+      )
+   ) 
+   MEASURE Card(Flat(E,w,r))
+
+
+   % formalises the notion of aliasing flow dependence based on
+   % the definition of SetW? (see above)
+   SetW(E:(IsEventSpace?),r:(Carrier(E))) : setof[event] =
+   	{ w:(Carrier(E)) |  Write?(w) AND Read?(r) AND SetW?(E,w,r) }
+   
+   % Besides the events in the slice set SetW(E,r), the residual
+   % slice set must contain other elements in order to preserve
+   % the structure of event space. Here, the residual slice set
+   % is calculated from a read acion r
+   Residual_Slice_Set_Action(E:(IsEventSpace?),r:(Carrier(E))) : setof[event] = 
+	{ e:(Carrier(E)) | 
+		Read?(r) AND
+	(	 
+		SetW(E,r)(e)
+		OR
+		member(e,	{ (s:(Carrier(E))) |
+		   			Store?(s) AND
+		   			EXISTS(w2:(Carrier(E))) :
+	   				  Write?(w2)    AND 
+	   				  SetW(E,r)(w2) AND 
+   					  lw(w2)=lr(r)  AND 
+   					  s=StoreOf(E,w2)
+			   	}) 		OR
+		member(e,	{ (a:(Carrier(E))) |
+		   			Assign?(a) AND
+		   			EXISTS (s,s1:(Carrier(E))) :
+					( Store?(s)  AND
+		   			  Store?(s1) AND
+		  	 		  SetW(E,r)(s)  AND
+		  	 		  SetW(E,r)(s1) AND
+   					  E(s,a) AND
+		   			  s /= a AND 
+   					  E(a,s1)
+					)
+   				})		OR
+		member(e,  	{ (l:(Carrier(E))) | Lock?(l) }) OR
+		member(e,	{ (ul:(Carrier(E))) | Unlock?(ul) }) OR
+		member(e,	{ (w2:(Carrier(E))) |
+		   			Write?(w2) AND
+   					lw(w2)=lr(r) AND
+		   			( E(w2,r) OR E(r,w2) ) 
+	 	
+				})
+	  )
+	}
+
+
+    % It calculates the union of residual set actions (see above) for every read
+    % action r in the slicing criterion C
+    Residual_Slice_Set(E:(IsEventSpace?),C:setof[event]) : setof[event] =
+	Union ( { (x:setof[event]) | EXISTS(r:(Carrier(E))): 
+					( member(r,C) AND 
+					  Read?(r) AND
+					  x=Residual_Slice_Set_Action(E,r) 
+					)	
+		} )
+	
+    % The sliced set of E under criterion C is found 
+    % restricting the relation order on E to the
+    % the residual set Residual_Slice_Set(E,C)
+    Slice_Set(E:(IsEventSpace?),C:setof[event]) : setof[[event,event]] =
+	{ (e,f) |  LET R = Residual_Slice_Set(E,C) IN
+		   ( 	Carrier(E)(e) AND
+			Carrier(E)(f) AND
+			R(e) AND 
+			R(f) AND
+			E(e,f)
+		   )
+
+	
+	}
+	 
+     slice_sets_are_event_spaces : JUDGEMENT
+	Slice_Set (E: (IsEventSpace?),C:setof[event]) HAS_TYPE (IsEventSpace?)
+
+     %-
+     slice_sets_preserve_relation: LEMMA
+	FORALL (E: (IsEventSpace?),C:setof[event]):
+		( Carrier(E)(e) AND Carrier(E)(f) AND Slice_Set(E,C)(e,f) )
+		IMPLIES
+		E(e,f)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% --------- End of Part 3 ------------ %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ totalOf(E:(IsEventSpace?))(e1:event,e2:event) : bool =
+   IF E(e1,e2) THEN true
+   ELSE IF E(e2,e1) AND e1/=e2 THEN false
+	ELSE le_event(e1,e2) ENDIF
+   ENDIF
+
+ totalStrictOf(E:(IsEventSpace?))(e1:event,e2:event) : bool =
+   e1/=e2 AND totalOf(E)(e1,e2)
+END evspace
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% -------------- Part 4 -------------- %%%%%%%%%%%
+% This part axiomatize slicing of event spaces               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%- Le M=(S,R,L) be an arbitrary finite Kripke structure. The 
+%%- set P(S) of all subsets of S forms a lattice under the set 
+%%- inclusion ordering. P(S) denotes this lattice. Each element 
+%%- S' of the lattice can also be thought of as a predicate on 
+%%- S, where the predicate is viewed as being true for exactly 
+%%- the states in S'. The least element in the lattice is the 
+%%- empty set, FALSE, and the greatest element in the lattice 
+%%- is the set S, sometimes also refered as TRUE.
+%%-
+%%- A function tau that maps P(S) to P(S) is called a predicate
+%%- transformer. If one identifies ecah CTL formula f with the
+%%- predicate: 
+%%- {s | M,s |= f} in P(S) then each of the basic CTL operators
+%%- may be characterized as a least or greatest fixpoint of an 
+%%- appropiate predicate transformer.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-- Defintion of state property: 
+%-- these 3 datatype together define the
+%-- kind of properties we want to check
+%-- in at some state of the event space
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+constvar_prop : DATATYPE
+BEGIN
+ IMPORTING lval
+ %%- variables and constants
+ VRB(var_:lval)	:VRB?
+ CNS(cns_:nat)	:CNS?
+END constvar_prop
+
+simple_atom_prop : DATATYPE
+BEGIN
+IMPORTING constvar_prop
+ %%- relational operators
+ P_LT(psales1_	:constvar_prop,psales2_	:constvar_prop)	:LES?
+ P_LE(psaleq1_	:constvar_prop,psaleq2_	:constvar_prop)	:LEQ?
+ P_NE(psaneq1_	:constvar_prop,psaneq2_	:constvar_prop)	:NEQ?
+ P_EQ(psaeq1_	:constvar_prop,psaeq2_	:constvar_prop)	:EQ?
+ P_GT(psagre1_	:constvar_prop,psagre2_	:constvar_prop)	:GRE?
+ P_GE(psageq1_	:constvar_prop,psageq2_	:constvar_prop):GEQ?
+END simple_atom_prop
+
+state_prop : DATATYPE
+BEGIN
+IMPORTING simple_atom_prop
+ %%- logical operators
+ P_OR(psor1_	:state_prop,	or2_	:state_prop)	:OR?
+ P_AND(psand1_	:state_prop,	and2_	:state_prop)	:AND?
+ P_NEG(psneg_	:state_prop)				:NEG?
+ P_T(pspt_	:simple_atom_prop)			:T?
+END state_prop
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-- End of Definition of state property
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% Definion of general properties:
+%% We're interested in properties constructed
+%% with the help of the  CTL operators.
+%% See the theory ctlops in the prelude
+property : DATATYPE
+BEGIN
+IMPORTING state_prop
+ PEX(p_: state_prop): PEX?
+ PEG(p_: state_prop): PEG?
+ PEU(p_: state_prop, q_: state_prop): PEU?
+ PEF(p_: state_prop): PEF?
+ PAX(p_: state_prop): PAX?
+ PAF(p_: state_prop): PAF?
+ PAG(p_: state_prop): PAG?
+ PAU(p_: state_prop, q_: state_prop): PAU?
+END property
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-- Event space theory for checking event spaces
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+evspacecheck : THEORY
+BEGIN
+IMPORTING evspace, 
+auxiliary_lemmas[event]
+
+%--%
+% the current state of the store is an 
+% association of left values into right
+% values.
+strstate: TYPE = [lval -> rval]
+
+%--%
+% The history hst_ represents the set of events have occurred
+% in order to get the current state from the inital state.
+% The store str_ records all the effect produced by the history
+% hst_ on left values.
+state: TYPE = [# hst_: setof[event], str_: strstate #]
+
+
+ % We're interested in predicates defined on the store.
+ to_pred_state(P:pred[strstate]): pred[state] =
+	LAMBDA(s:state): P(s`str_)
+ CONVERSION to_pred_state
+
+
+IMPORTING property
+s,s0,s1	: VAR state
+strs	: VAR strstate
+
+prop	: VAR property
+sprop	: VAR state_prop
+e,e1,e2	: VAR event
+
+IMPORTING ctlops[state],constvar_prop,simple_atom_prop
+ 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % Expressing event spaces as a FSA
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+ 
+ %%- The transition s to s1 is allowed if there exists some event e
+ %%- such that every event before e belongs to the history and
+ %%- the stores of states s and s1 differ just in the effect
+ %%- produced by e
+ NextState(E:(IsEventSpace?))(s,s1) : bool =
+  LET setDiff = difference(s1`hst_,s`hst_) IN
+  singleton?[event](setDiff) AND 
+  Carrier(E)(the(setDiff)) AND
+  ( FORALL(f:event) :
+     (Carrier(E)(f) AND E(f,the(setDiff)) AND f /= the(setDiff))
+     IMPLIES
+     s`hst_(f) 
+  ) AND
+  s1`hst_ = add(the(setDiff),s`hst_) AND
+  s1`str_ =
+	CASES the(setDiff) OF
+	Write(t,l,r):	s`str_ WITH [l:=r]
+	ELSE		s`str_
+	ENDCASES
+ 
+ %- Like NextState but using event e
+ NextStateWith(E:(IsEventSpace?))(s,s1)(e:event) : bool =
+  LET setDiff = difference(s1`hst_,s`hst_) IN
+  singleton?[event](setDiff) AND
+  member(e,setDiff) AND
+  Carrier(E)(e) AND
+  ( FORALL(f:event) :
+     (Carrier(E)(f) AND E(f,e) AND f /= e)
+     IMPLIES
+     ( s`hst_(f) AND
+	s1`hst_ = add(e,s`hst_) AND
+	s1`str_ =
+		CASES e OF
+		Write(t,l,r):	s`str_ WITH [l:=r]
+		ELSE		s`str_
+		ENDCASES
+     )
+  )
+ 
+ %- 
+ rdefault : rval
+ 
+ %-
+ InitialState(s) : bool =
+  empty?[event](s`hst_) AND
+  s`str_ = LAMBDA(l:lval): rdefault
+   
+ %-
+ trace: TYPE = [nat -> state]
+ 
+ %-
+ Path(E:(IsEventSpace?))(tr:trace) : bool =
+  ( FORALL(i:nat): NextState(E)(tr(i),tr(i+1)) ) AND
+  ( InitialState(tr(0)) )
+ 
+ %- proved
+ traces_are_empty_initially : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES empty?[event](tr(0)`hst_)
+ 
+ %- proved
+ traces_make_single_steps : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES
+   ( subset?(tr(i)`hst_, tr(i+1)`hst_) AND 
+     singleton?[event](difference(tr(i+1)`hst_,tr(i)`hst_))
+   )
+  
+ %- proved
+ traces_are_strict_subsets : LEMMA 
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES 
+   strict_subset?(tr(i)`hst_,tr(i+1)`hst_)
+
+ %- proved
+ traces_as_increments : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES 
+   tr(i+1)`hst_ = union(tr(i)`hst_,difference(tr(i+1)`hst_,tr(i)`hst_))
+
+ %- proved
+ traces_as_increments_the : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES 
+   tr(i+1)`hst_ = add(the(difference(tr(i+1)`hst_,tr(i)`hst_)),tr(i)`hst_)
+
+ %- proved 
+ traces_take_elements_from_evspace : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES 
+   subset?(tr(i)`hst_,Carrier(E))
+ 
+ %- proved
+ traces_grow_strictly : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   LET R = Slice_Set(E,C) IN 
+   Path(R)(tr)
+   IMPLIES
+   ( FORALL(k,l:nat) :
+	k<l 
+	IMPLIES
+	strict_subset?[event](tr(k)`hst_,tr(l)`hst_)
+   )
+
+ %- proved
+ traces_grow : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   LET R = Slice_Set(E,C) IN 
+   Path(R)(tr)
+   IMPLIES
+   ( FORALL(k,l:nat) :
+	k<=l 
+	IMPLIES
+	subset?[event](tr(k)`hst_,tr(l)`hst_)
+   )
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % End of expressing event spaces as a FSA
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %-- Evaluation of a property 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+ EvalConstVar(CVP:constvar_prop)(strs) : nat =
+  CASES CVP OF
+   VRB(vrb): CASES strs(vrb) OF
+		Ival(i): i,
+		Bval(b): 1,
+		Oref(obrf): 0
+	    ENDCASES,
+   CNS(cns): cns
+  ENDCASES
+
+ EvalPred(SPP:simple_atom_prop)(strs) : RECURSIVE bool =
+  CASES SPP OF
+   P_LT(t1,t2)	: EvalConstVar(t1)(strs) <  EvalConstVar(t2)(strs),
+   P_LE(t1,t2)	: EvalConstVar(t1)(strs) <= EvalConstVar(t2)(strs),
+   P_EQ(t1,t2)	: EvalConstVar(t1)(strs) =  EvalConstVar(t2)(strs),
+   P_NE(t1,t2)	: EvalConstVar(t1)(strs) /= EvalConstVar(t2)(strs),
+   P_GT(t1,t2)	: EvalConstVar(t1)(strs) >  EvalConstVar(t2)(strs),
+   P_GE(t1,t2)	: EvalConstVar(t1)(strs) >= EvalConstVar(t2)(strs)
+  ENDCASES
+ MEASURE SPP by <<
+ 
+ Eval(SP:state_prop)(strs) : RECURSIVE bool = 
+  CASES SP OF
+   P_OR(ps1,ps2)	: Eval(ps1)(strs) OR  Eval(ps2)(strs),
+   P_AND(ps1,ps2)	: Eval(ps1)(strs) AND Eval(ps2)(strs), 
+   P_NEG(ps1)		: NOT(Eval(ps1)(strs)),
+   P_T(psp)		: EvalPred(psp)(strs)
+  ENDCASES
+ MEASURE SP by <<
+ 
+ %-
+ Sem(prop)(E:(IsEventSpace?))(s) : bool =
+  CASES prop OF
+   PEX(P): TRUE,
+   PEG(P):
+	EXISTS(tr:trace):
+	  tr(0)=s
+          AND
+	  Path(E)(tr)
+	  AND
+	  ( FORALL(j:nat): Eval(P)(tr(j)) )
+	,
+   PEU(P,Q):
+	EXISTS(tr:trace): 
+	  tr(0)=s
+	  AND
+	  Path(E)(tr)
+	  AND
+	  ( EXISTS(k:nat):
+		Eval(Q)(tr(k)) 
+		AND
+		FORALL(j:nat):
+			j < k 
+			IMPLIES
+			Eval(P)(tr(j))
+	  )
+	,
+   PEF(P):
+	EXISTS(tr:trace):
+	  tr(0)=s
+	  AND
+	  Path(E)(tr)
+	  AND
+	  ( EXISTS(k:nat): Eval(P)(tr(k)) )
+	,
+   PAX(P): TRUE,	
+   PAF(P): 
+	FORALL(tr:trace):
+	  ( tr(0)=s AND Path(E)(tr) )
+	  IMPLIES
+	  ( EXISTS(k:nat): Eval(P)(tr(k)) )
+	,
+   PAG(P):
+	FORALL(tr:trace):
+	  ( tr(0)=s AND Path(E)(tr) )
+	  IMPLIES
+	  ( FORALL(i:nat): Eval(P)(tr(i)) )
+	,
+   PAU(P,Q):
+	FORALL(tr:trace):
+	  ( tr(0)=s AND Path(E)(tr) )
+	  IMPLIES
+	  ( EXISTS(k:nat):
+		Eval(Q)(tr(k)) 
+		AND
+		FORALL(j:nat):
+			j < k 
+			IMPLIES
+			Eval(P)(tr(j))
+	  )
+ ENDCASES 
+ 
+ %-
+ Holds(E:(IsEventSpace?))(prop) : bool =
+ FORALL(s) :
+	InitialState(s)
+	IMPLIES
+	Sem(prop)(E)(s)
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %-- End of evaluation of a property
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % Definition and lemmas on extended traces
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ extended_trace(E:(IsEventSpace?),C:setof[event])(tr:(Path(Slice_Set(E,C)))): trace =
+  LAMBDA(n:nat): (# hst_:= { e:event | Carrier(E)(e) AND EXISTS(a:event): Carrier(E)(a) AND tr(n)`hst_(a) AND E(e,a)},
+		  str_ := tr(n)`str_ #)
+
+ %- proved
+ extended_traces_are_empty_initially : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   empty?[event](extended_trace(E,C)(tr)(0)`hst_)
+ 
+ %- proved
+ extended_traces_contain_traces : LEMMA 
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   subset?(tr(i)`hst_,extended_trace(E,C)(tr)(i)`hst_)
+ 
+ %- proved
+ extended_traces_are_subsets : LEMMA 
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   subset?(extended_trace(E,C)(tr)(i)`hst_,extended_trace(E,C)(tr)(i+1)`hst_)
+ 
+ %-+ proved
+ extended_traces_as_increments : LEMMA 
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   extended_trace(E,C)(tr)(i+1)`hst_ = union ( extended_trace(E,C)(tr)(i)`hst_,
+					{ e:event | Carrier(E)(e) AND E(e,the(difference(tr(i+1)`hst_,tr(i)`hst_))) })
+ 
+ %-+ proved
+ extended_traces_differences_are_finite : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   is_finite[event]({ e:event | Carrier(E)(e) AND E(e,the(difference(tr(i+1)`hst_,tr(i)`hst_))) })
+
+ %-+ proved
+ extended_traces_are_finite : LEMMA 
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   is_finite[event](extended_trace(E,C)(tr)(i)`hst_)
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % End of extended trace
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+ %- this axiom should be a lemma
+ minimum_exists: AXIOM
+  FORALL(E:(IsEventSpace?)):
+   singleton?[(Carrier(E))]( LAMBDA(x:(Carrier(E))): (FORALL(y:event): Carrier(E)(y) IMPLIES totalStrictOf(E)(x, y)) )
+ 
+ %-
+ minOfEtr(E:(IsEventSpace?))(S:setof[event]) : (singleton?[(Carrier(E))]) =
+  { (e:event) | (S(e) AND Carrier(E)(e)) AND (FORALL(f:event): (S(f) AND Carrier(E)(f)) IMPLIES totalStrictOf(E)(e,f)) }
+
+ %- It takes k elements from S
+ make_history(E:(IsEventSpace?))(k:nat,S:setof[(Carrier(E))]) : RECURSIVE setof[(Carrier(E))] = 
+   IF k=0 THEN emptyset ELSE
+     LET a = the[(Carrier(E))](minOfEtr(E)(S)) IN
+     add(a,make_history(E)(k-1,remove(a,S)))
+   ENDIF
+ MEASURE k
+ 
+ %- Notice that this axiom is intuitively true because the set 'S'
+ %- in definition of 'make_history" above has type 'setof[(Carrier(E))]'
+ make_history_takes_elements_from_evspace : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],S:setof[(Carrier(E))],tr:trace,k:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES
+   subset?[(Carrier(E))](make_history(E)(k,S),Carrier(E))
+ 
+ % It takes k elements from S and makes k-updates to st
+ make_store(E:(IsEventSpace?))(k:nat,S:setof[event])(st:strstate) : RECURSIVE  strstate =
+   IF k=0 THEN st ELSE
+     LET a = the(minOfEtr(E)(S)) IN
+     LET st1 =
+	CASES a OF 
+	  Write(t,l,r):	st WITH [l:=r]
+	  ELSE		st
+	ENDCASES IN make_store(E)(k-1,remove(a,S))(st1)
+   ENDIF
+ MEASURE k
+ 
+
+ %%%%%%%%%%%%%%%%%
+ % The following 3 lemmas (in the time being the are axioms)
+ % ensure that 'original_trace' is correct
+ %%%%%%%%%%%%%%%%%
+ %
+ etr_nonempty_n_positive : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:(Path(Slice_Set(E,C))),n:nat) :
+   LET S=LAMBDA (x: nat): Card(extended_trace(E,C)(tr)(x)`hst_) >= n IN nonempty?[nat](S)
+ 
+ %
+ etr_min_positive : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:(Path(Slice_Set(E,C))),n:nat) :
+   n>0 IMPLIES LET S=LAMBDA (x: nat): Card(extended_trace(E,C)(tr)(x)`hst_) >= n IN min(S)>0
+ 
+ %
+ et_n_minus_p_nonegative: AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:(Path(Slice_Set(E,C))),n:nat) :
+   n>0 IMPLIES LET S=LAMBDA (x: nat): Card(extended_trace(E,C)(tr)(x)`hst_) >= n IN
+	       LET m=min(S) IN
+               LET p=Card(extended_trace(E,C)(tr)(m-1)`hst_) IN n-p>=0
+ %%%%%%%%%%%%%%%%%
+ % End of 3 lemmas
+ %%%%%%%%%%%%%%%%%
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % Constructing original traces from traces
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ original_trace(E:(IsEventSpace?),C:setof[event])(tr:(Path(Slice_Set(E,C)))) : trace =
+  LET etr = extended_trace(E,C)(tr) IN
+   LAMBDA(n:nat): 
+     IF n=0 THEN tr(0) 
+     ELSE
+      ( LET S = LAMBDA(x:nat): Card(etr(x)`hst_)>=n IN
+        LET m = min(S) IN
+	IF Card(etr(m)`hst_)= n THEN etr(m)
+	ELSE LET setDiff = difference(etr(m)`hst_,etr(m-1)`hst_),
+		 p = Card(etr(m-1)`hst_) IN
+	     (# hst_ := union(etr(m-1)`hst_,make_history(E)(n-p,setDiff)),
+	        str_ := make_store(E)(n-p,setDiff)(etr(m-1)`str_) #)
+	ENDIF
+      )
+     ENDIF
+ 
+ %- proved, it uses the 3 lemmas above
+ otr_takes_elements_from_evspace : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES
+    subset?(original_trace(E,C)(tr)(i)`hst_,Carrier(E))
+
+ %- Notice that axiom actually should be a lemma. What it says is that
+ %- make_history is correct, that is, given a k it always return k elments
+ %- totally ordered. And if make_history is called with k-1 elements, it
+ %- returns k-1 elements as the k-1 first elements when called with k.
+ %- The proof of this lemma would use 'otr_takes_elements_from_evspace'.
+ otr_makes_single_steps : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) : 
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES
+   ( subset?(original_trace(E,C)(tr)(i)`hst_,original_trace(E,C)(tr)(i+1)`hst_) AND
+     singleton?[event](difference[event](original_trace(E,C)(tr)(i+1)`hst_,
+	 		original_trace(E,C)(tr)(i)`hst_))
+   )
+ 
+ %- proved
+ otr_difference_is_in_evspace : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES subset?[event](difference(original_trace(E,C)(tr)(i+1)`hst_,
+			original_trace(E,C)(tr)(i)`hst_),Carrier(E))
+ 
+ %- proved
+ otr_the_element_is_in_evspace : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES Carrier(E)(the(difference(original_trace(E,C)(tr)(i+1)`hst_,
+					original_trace(E,C)(tr)(i)`hst_))) 
+ %- proved
+ %- see proof of traces_are_strict_subsets
+ otr_are_strict_subsets : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES 
+   strict_subset?(original_trace(E,C)(tr)(i)`hst_,original_trace(E,C)(tr)(i+1)`hst_)
+ 
+ %- proved
+ %- see proof of traces_grow_strictly
+ otr_grows_strictly : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   LET R = Slice_Set(E,C) IN 
+   Path(R)(tr)
+   IMPLIES
+   ( FORALL(k,l:nat) :
+	k<l 
+	IMPLIES
+	strict_subset?[event](original_trace(E,C)(tr)(k)`hst_,original_trace(E,C)(tr)(l)`hst_)
+   )
+ 
+ %- proved
+ %- see proof of traces_grow
+ otr_grows : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   LET R = Slice_Set(E,C) IN 
+   Path(R)(tr)
+   IMPLIES
+   (FORALL(k,l:nat) :
+	k<=l
+	IMPLIES
+	subset?[event](original_trace(E,C)(tr)(k)`hst_,original_trace(E,C)(tr)(l)`hst_)
+   )
+ 
+ %- proved
+ %- see proof of traces_as_increments_the
+ otr_as_increments_the : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr) 
+   IMPLIES
+   original_trace(E,C)(tr)(i+1)`hst_ =
+	 add(	the(difference(original_trace(E,C)(tr)(i+1)`hst_,original_trace(E,C)(tr)(i)`hst_)),
+ 		original_trace(E,C)(tr)(i)`hst_)
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%
+ % The two following axioms should be actually lemmas,
+ % they describe (part of) the well-formedness of 'original_trace'
+ % These lemmas descharges 2 out of 3 (final) cases of 'constructing_original_traces_from_traces'
+ %%%%%%%%%%%%%%%%%%%%%%%%%
+
+ %- This axiom says that original_trace effectively takes "in order" elements
+ %- from the event spaces E. Thus, if one goes from state s.h to s1.h through
+ %- event e, original_trace ensures that s.h includes any element f<e.
+ %- Notice that we know before hand that otr(j).h < otr(j+1).h and that
+ %- singleton(Diff(otr(j+1).h,otr(j).h))
+ otr_preservs_history : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,j:nat) :
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES
+   (
+     LET e_j = the(difference(original_trace(E,C)(tr)(j+1)`hst_, original_trace(E,C)(tr)(j)`hst_)) IN
+     FORALL(b:event): (E(b,e_j) AND b/=e_j) IMPLIES (original_trace(E,C)(tr)(j)`hst_(b))
+   )
+
+ %- As the axiom above, but this time w.r.t store
+ otr_makes_single_updates : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,i:nat) : 
+   LET R = Slice_Set(E,C) IN
+   Path(R)(tr)
+   IMPLIES 
+     LET e_i = the(difference(	original_trace(E,C)(tr)(i+1)`hst_,
+				original_trace(E,C)(tr)(i)`hst_)) IN
+     original_trace(E,C)(tr)(i+1)`str_ = 
+	CASES e_i OF
+	  Write(t,l,r):	original_trace(E,C)(tr)(i)`str_ WITH [l:=r]
+	  ELSE		original_trace(E,C)(tr)(i)`str_
+	ENDCASES
+ %%%%%%%%%%%%%%%%%%%%%%%%%
+ % End of two axioms
+ %%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+ %-
+ PathUpTo(E:(IsEventSpace?))(tr:trace)(n:nat) : RECURSIVE bool =
+  IF n=0 THEN InitialState(tr(0))
+  ELSE ( PathUpTo(E)(tr)(n-1) AND NextState(E)(tr(n-1),tr(n)) )
+  ENDIF
+ MEASURE n
+ 
+ %- proved
+ %- We use this equivalence when constructing original traces from sliced traces.
+ %- See 'constructing_original_traces_from_traces'
+ paths_iff_path_for_all_i : LEMMA
+  FORALL(E:(IsEventSpace?),tr:trace):
+   ( Path(E)(tr) IFF (FORALL(i:nat): PathUpTo(E)(tr)(i)) )
+ 
+ %- proved
+ constructing_original_traces_from_traces : LEMMA
+  FORALL(E:(IsEventSpace?),C:setof[event],tr:trace):
+   Path(Slice_Set(E,C))(tr) IMPLIES Path(E)(original_trace(E,C)(tr))
+ 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ % End of constructing original traces from traces
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+ 
+ 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% The following definitions-axioms are used to  
+ %% proof that Eval(tr) implies Eval(otr(tr))
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ %-- The predicate define as unimportant all these events that do not
+ %-- produce any effect on the store.
+ unimportant_event(C:setof[event])(e:event) : bool =
+  NOT Write?(e) OR
+  (Write?(e) AND NOT ( EXISTS(f:(Read?)): C(f) IMPLIES lr(f)=lw(e) ))
+ 
+ %-- This axiom says that, when evaluating a property, if one nows that
+ %-- the property is true at some state s, then if there exists some state
+ %-- s1 which differes from s in unimportant events only, then the propertry
+ %-- will be true in s1 as well.
+ %-- ??? this axiom should be rephrased, actually one needs that event in 
+ %-- ??? s and s1 occurs in the same order
+ eval_is_well_formed : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],SP:state_prop,s,s1:state) :
+   Eval(SP)(s`str_) AND
+   subset?[event](s`hst_,s1`hst_) AND
+   ( FORALL(e:event): difference(s1`hst_,s`hst_)(e) IMPLIES unimportant_event(C)(e) )
+   IMPLIES
+   Eval(SP)(s1`str_) 
+ 
+ %--
+ eval_is_well_formed2 : AXIOM
+  FORALL(E:(IsEventSpace?),C:setof[event],SP:state_prop,s,s1:state) :
+   Eval(SP)(s1`str_) AND
+   subset?[event](s`hst_,s1`hst_) AND
+   ( FORALL(e:event): difference(s1`hst_,s`hst_)(e) IMPLIES unimportant_event(C)(e) )
+   IMPLIES
+   Eval(SP)(s`str_) 
+ 
+ %-- It should be a lemma instead 
+ slice_set_is_correct : AXIOM
+   FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   Path(Slice_Set(E,C))(tr)
+   IMPLIES
+   ( FORALL(j:nat) : EXISTS(i:nat) :	i<=j AND
+					subset?[event](tr(i)`hst_,original_trace(E,C)(tr)(j)`hst_) AND
+					( FORALL(b:event):difference(original_trace(E,C)(tr)(j)`hst_,tr(i)`hst_)(b) 
+							IMPLIES
+							unimportant_event(C)(b)
+					)
+   )
+
+  %-- It should be a lemma instead 
+  otr_is_correct : AXIOM
+   FORALL(E:(IsEventSpace?),C:setof[event],tr:trace) :
+   Path(Slice_Set(E,C))(tr)
+   IMPLIES
+   ( FORALL(i:nat) : EXISTS(j:nat):	j>=i AND
+					subset?[event](tr(i)`hst_,original_trace(E,C)(tr)(j)`hst_) AND
+					( FORALL(b:event):
+						difference(original_trace(E,C)(tr)(j)`hst_,tr(i)`hst_)(b) 
+						IMPLIES
+						unimportant_event(C)(b)
+					)
+	)
+  
+  %--
+  otr_anti_monotonic : AXIOM
+   FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,r,q,m,n:nat):
+     Path(Slice_Set(E,C))(tr)
+     IMPLIES
+	r<=m AND
+	subset?[event](tr(r)`hst_,original_trace(E,C)(tr)(m)`hst_) AND
+	( FORALL(b:event):difference(original_trace(E,C)(tr)(m)`hst_,tr(r)`hst_)(b) 
+		IMPLIES
+		unimportant_event(C)(b)
+	) AND
+	q<=n AND
+	subset?[event](tr(q)`hst_,original_trace(E,C)(tr)(n)`hst_) AND
+	( FORALL(b:event):difference(original_trace(E,C)(tr)(n)`hst_,tr(q)`hst_)(b) 
+		IMPLIES
+		unimportant_event(C)(b)
+	) AND
+	m<n
+	   IMPLIES
+		r<q 
+
+  otr_monotonic : AXIOM
+   FORALL(E:(IsEventSpace?),C:setof[event],tr:trace,r,q,m,n:nat):
+     Path(Slice_Set(E,C))(tr)
+     IMPLIES
+	r<=m AND
+	subset?[event](tr(r)`hst_,original_trace(E,C)(tr)(m)`hst_) AND
+	( FORALL(b:event):difference(original_trace(E,C)(tr)(m)`hst_,tr(r)`hst_)(b) 
+		IMPLIES
+		unimportant_event(C)(b)
+	) AND
+	q<=n AND
+	subset?[event](tr(q)`hst_,original_trace(E,C)(tr)(n)`hst_) AND
+	( FORALL(b:event):difference(original_trace(E,C)(tr)(n)`hst_,tr(q)`hst_)(b) 
+		IMPLIES
+		unimportant_event(C)(b)
+	) AND
+	r<q
+	   IMPLIES
+		m<n
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% End of axioms
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+ %%--
+ E: VAR (IsEventSpace?)
+ C: VAR setof[event]
+ 
+ %-
+ preserving_slice_if : THEOREM  
+  Holds(Slice_Set(E,C))(prop)
+  IMPLIES
+  Holds(E)(prop)
+  
+ %-
+ preserving_slice_fi : THEOREM
+  Holds(E)(prop)
+  IMPLIES
+  Holds(Slice_Set(E,C))(prop) 
+
+END evspacecheck
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-- End of event space theory
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

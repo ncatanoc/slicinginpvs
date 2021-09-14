@@ -1,0 +1,145 @@
+%%% ADT file generated from evspaces
+
+jtype_adt: THEORY
+ BEGIN
+
+  jtype: TYPE
+
+  IMPORTING primitivetype
+
+  PrimType?, ClType?: [jtype -> boolean]
+
+  primitivetype_: [(PrimType?) -> primitivetype]
+
+  classtype_: [(ClType?) -> string]
+
+  PrimType: [primitivetype -> (PrimType?)]
+
+  ClType: [string -> (ClType?)]
+
+  jtype_ord: [jtype -> upto(1)]
+
+  jtype_ord_defaxiom: AXIOM
+    (FORALL (primitivetype_: primitivetype):
+       jtype_ord(PrimType(primitivetype_)) = 0)
+     AND FORALL (classtype_: string): jtype_ord(ClType(classtype_)) = 1;
+
+  ord(x: jtype): upto(1) =
+      CASES x OF PrimType(PrimType1_var): 0, ClType(ClType1_var): 1 ENDCASES
+
+  jtype_PrimType_extensionality: AXIOM
+    FORALL (PrimType?_var: (PrimType?), PrimType?_var2: (PrimType?)):
+      primitivetype_(PrimType?_var) = primitivetype_(PrimType?_var2)
+       IMPLIES PrimType?_var = PrimType?_var2;
+
+  jtype_PrimType_eta: AXIOM
+    FORALL (PrimType?_var: (PrimType?)):
+      PrimType(primitivetype_(PrimType?_var)) = PrimType?_var;
+
+  jtype_ClType_extensionality: AXIOM
+    FORALL (ClType?_var: (ClType?), ClType?_var2: (ClType?)):
+      classtype_(ClType?_var) = classtype_(ClType?_var2) IMPLIES
+       ClType?_var = ClType?_var2;
+
+  jtype_ClType_eta: AXIOM
+    FORALL (ClType?_var: (ClType?)):
+      ClType(classtype_(ClType?_var)) = ClType?_var;
+
+  jtype_primitivetype__PrimType: AXIOM
+    FORALL (PrimType1_var: primitivetype):
+      primitivetype_(PrimType(PrimType1_var)) = PrimType1_var;
+
+  jtype_classtype__ClType: AXIOM
+    FORALL (ClType1_var: string):
+      classtype_(ClType(ClType1_var)) = ClType1_var;
+
+  jtype_inclusive: AXIOM
+    FORALL (jtype_var: jtype): PrimType?(jtype_var) OR ClType?(jtype_var);
+
+  jtype_induction: AXIOM
+    FORALL (p: [jtype -> boolean]):
+      ((FORALL (PrimType1_var: primitivetype): p(PrimType(PrimType1_var)))
+        AND FORALL (ClType1_var: string): p(ClType(ClType1_var)))
+       IMPLIES FORALL (jtype_var: jtype): p(jtype_var);
+
+  subterm(x: jtype, y: jtype):  boolean = x = y;
+
+  <<:  (strict_well_founded?[jtype]) = LAMBDA (x, y: jtype): FALSE;
+
+  jtype_well_founded: AXIOM strict_well_founded?[jtype](<<);
+
+  reduce_nat(PrimType?_fun: [primitivetype -> nat],
+             ClType?_fun: [string -> nat]):
+        [jtype -> nat] =
+      LAMBDA (jtype_adtvar: jtype):
+        LET red: [jtype -> nat] = reduce_nat(PrimType?_fun, ClType?_fun) IN
+          CASES jtype_adtvar
+            OF PrimType(PrimType1_var): PrimType?_fun(PrimType1_var),
+               ClType(ClType1_var): ClType?_fun(ClType1_var)
+            ENDCASES;
+
+  REDUCE_nat(PrimType?_fun: [[primitivetype, jtype] -> nat],
+             ClType?_fun: [[string, jtype] -> nat]):
+        [jtype -> nat] =
+      LAMBDA (jtype_adtvar: jtype):
+        LET red: [jtype -> nat] = REDUCE_nat(PrimType?_fun, ClType?_fun) IN
+          CASES jtype_adtvar
+            OF PrimType(PrimType1_var):
+                 PrimType?_fun(PrimType1_var, jtype_adtvar),
+               ClType(ClType1_var): ClType?_fun(ClType1_var, jtype_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(PrimType?_fun: [primitivetype -> ordinal],
+                 ClType?_fun: [string -> ordinal]):
+        [jtype -> ordinal] =
+      LAMBDA (jtype_adtvar: jtype):
+        LET red: [jtype -> ordinal] =
+              reduce_ordinal(PrimType?_fun, ClType?_fun)
+          IN
+          CASES jtype_adtvar
+            OF PrimType(PrimType1_var): PrimType?_fun(PrimType1_var),
+               ClType(ClType1_var): ClType?_fun(ClType1_var)
+            ENDCASES;
+
+  REDUCE_ordinal(PrimType?_fun: [[primitivetype, jtype] -> ordinal],
+                 ClType?_fun: [[string, jtype] -> ordinal]):
+        [jtype -> ordinal] =
+      LAMBDA (jtype_adtvar: jtype):
+        LET red: [jtype -> ordinal] =
+              REDUCE_ordinal(PrimType?_fun, ClType?_fun)
+          IN
+          CASES jtype_adtvar
+            OF PrimType(PrimType1_var):
+                 PrimType?_fun(PrimType1_var, jtype_adtvar),
+               ClType(ClType1_var): ClType?_fun(ClType1_var, jtype_adtvar)
+            ENDCASES;
+ END jtype_adt
+
+jtype_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING jtype_adt
+
+  IMPORTING primitivetype
+
+  reduce(PrimType?_fun: [primitivetype -> range],
+         ClType?_fun: [string -> range]):
+        [jtype -> range] =
+      LAMBDA (jtype_adtvar: jtype):
+        LET red: [jtype -> range] = reduce(PrimType?_fun, ClType?_fun) IN
+          CASES jtype_adtvar
+            OF PrimType(PrimType1_var): PrimType?_fun(PrimType1_var),
+               ClType(ClType1_var): ClType?_fun(ClType1_var)
+            ENDCASES;
+
+  REDUCE(PrimType?_fun: [[primitivetype, jtype] -> range],
+         ClType?_fun: [[string, jtype] -> range]):
+        [jtype -> range] =
+      LAMBDA (jtype_adtvar: jtype):
+        LET red: [jtype -> range] = REDUCE(PrimType?_fun, ClType?_fun) IN
+          CASES jtype_adtvar
+            OF PrimType(PrimType1_var):
+                 PrimType?_fun(PrimType1_var, jtype_adtvar),
+               ClType(ClType1_var): ClType?_fun(ClType1_var, jtype_adtvar)
+            ENDCASES;
+ END jtype_adt_reduce

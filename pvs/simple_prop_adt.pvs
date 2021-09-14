@@ -1,0 +1,271 @@
+%%% ADT file generated from evspaces
+
+simple_prop_adt: THEORY
+ BEGIN
+
+  IMPORTING atom_prop
+
+  simple_prop: TYPE
+
+  OR?, AND?, NEG?, T?: [simple_prop -> boolean]
+
+  P_OR: [[simple_prop, simple_prop] -> (OR?)]
+
+  P_AND: [[simple_prop, simple_prop] -> (AND?)]
+
+  P_NEG: [simple_prop -> (NEG?)]
+
+  P_T: [atom_prop -> (T?)]
+
+  psor1_: [(OR?) -> simple_prop]
+
+  or2_: [(OR?) -> simple_prop]
+
+  psand1_: [(AND?) -> simple_prop]
+
+  and2_: [(AND?) -> simple_prop]
+
+  psneg_: [(NEG?) -> simple_prop]
+
+  pspt_: [(T?) -> atom_prop]
+
+  simple_prop_ord: [simple_prop -> upto(3)]
+
+  simple_prop_ord_defaxiom: AXIOM
+    (FORALL (psor1_: simple_prop, or2_: simple_prop):
+       simple_prop_ord(P_OR(psor1_, or2_)) = 0)
+     AND
+     (FORALL (psand1_: simple_prop, and2_: simple_prop):
+        simple_prop_ord(P_AND(psand1_, and2_)) = 1)
+      AND
+      (FORALL (psneg_: simple_prop): simple_prop_ord(P_NEG(psneg_)) = 2)
+       AND (FORALL (pspt_: atom_prop): simple_prop_ord(P_T(pspt_)) = 3);
+
+  ord(x: simple_prop): upto(3) =
+      CASES x
+        OF P_OR(P_OR1_var, P_OR2_var): 0,
+           P_AND(P_AND1_var, P_AND2_var): 1,
+           P_NEG(P_NEG1_var): 2,
+           P_T(P_T1_var): 3
+        ENDCASES
+
+  simple_prop_P_OR_extensionality: AXIOM
+    FORALL (OR?_var: (OR?), OR?_var2: (OR?)):
+      psor1_(OR?_var) = psor1_(OR?_var2) AND or2_(OR?_var) = or2_(OR?_var2)
+       IMPLIES OR?_var = OR?_var2;
+
+  simple_prop_P_OR_eta: AXIOM
+    FORALL (OR?_var: (OR?)): P_OR(psor1_(OR?_var), or2_(OR?_var)) = OR?_var;
+
+  simple_prop_P_AND_extensionality: AXIOM
+    FORALL (AND?_var: (AND?), AND?_var2: (AND?)):
+      psand1_(AND?_var) = psand1_(AND?_var2) AND
+       and2_(AND?_var) = and2_(AND?_var2)
+       IMPLIES AND?_var = AND?_var2;
+
+  simple_prop_P_AND_eta: AXIOM
+    FORALL (AND?_var: (AND?)):
+      P_AND(psand1_(AND?_var), and2_(AND?_var)) = AND?_var;
+
+  simple_prop_P_NEG_extensionality: AXIOM
+    FORALL (NEG?_var: (NEG?), NEG?_var2: (NEG?)):
+      psneg_(NEG?_var) = psneg_(NEG?_var2) IMPLIES NEG?_var = NEG?_var2;
+
+  simple_prop_P_NEG_eta: AXIOM
+    FORALL (NEG?_var: (NEG?)): P_NEG(psneg_(NEG?_var)) = NEG?_var;
+
+  simple_prop_P_T_extensionality: AXIOM
+    FORALL (T?_var: (T?), T?_var2: (T?)):
+      pspt_(T?_var) = pspt_(T?_var2) IMPLIES T?_var = T?_var2;
+
+  simple_prop_P_T_eta: AXIOM
+    FORALL (T?_var: (T?)): P_T(pspt_(T?_var)) = T?_var;
+
+  simple_prop_psor1__P_OR: AXIOM
+    FORALL (P_OR1_var: simple_prop, P_OR2_var: simple_prop):
+      psor1_(P_OR(P_OR1_var, P_OR2_var)) = P_OR1_var;
+
+  simple_prop_or2__P_OR: AXIOM
+    FORALL (P_OR1_var: simple_prop, P_OR2_var: simple_prop):
+      or2_(P_OR(P_OR1_var, P_OR2_var)) = P_OR2_var;
+
+  simple_prop_psand1__P_AND: AXIOM
+    FORALL (P_AND1_var: simple_prop, P_AND2_var: simple_prop):
+      psand1_(P_AND(P_AND1_var, P_AND2_var)) = P_AND1_var;
+
+  simple_prop_and2__P_AND: AXIOM
+    FORALL (P_AND1_var: simple_prop, P_AND2_var: simple_prop):
+      and2_(P_AND(P_AND1_var, P_AND2_var)) = P_AND2_var;
+
+  simple_prop_psneg__P_NEG: AXIOM
+    FORALL (P_NEG1_var: simple_prop):
+      psneg_(P_NEG(P_NEG1_var)) = P_NEG1_var;
+
+  simple_prop_pspt__P_T: AXIOM
+    FORALL (P_T1_var: atom_prop): pspt_(P_T(P_T1_var)) = P_T1_var;
+
+  simple_prop_inclusive: AXIOM
+    FORALL (simple_prop_var: simple_prop):
+      OR?(simple_prop_var) OR
+       AND?(simple_prop_var) OR
+        NEG?(simple_prop_var) OR T?(simple_prop_var);
+
+  simple_prop_induction: AXIOM
+    FORALL (p: [simple_prop -> boolean]):
+      ((FORALL (P_OR1_var: simple_prop, P_OR2_var: simple_prop):
+          p(P_OR1_var) AND p(P_OR2_var) IMPLIES
+           p(P_OR(P_OR1_var, P_OR2_var)))
+        AND
+        (FORALL (P_AND1_var: simple_prop, P_AND2_var: simple_prop):
+           p(P_AND1_var) AND p(P_AND2_var) IMPLIES
+            p(P_AND(P_AND1_var, P_AND2_var)))
+         AND
+         (FORALL (P_NEG1_var: simple_prop):
+            p(P_NEG1_var) IMPLIES p(P_NEG(P_NEG1_var)))
+          AND (FORALL (P_T1_var: atom_prop): p(P_T(P_T1_var))))
+       IMPLIES (FORALL (simple_prop_var: simple_prop): p(simple_prop_var));
+
+  subterm(x, y: simple_prop):  boolean =
+      x = y OR
+       CASES y
+         OF P_OR(P_OR1_var, P_OR2_var):
+              subterm(x, P_OR1_var) OR subterm(x, P_OR2_var),
+            P_AND(P_AND1_var, P_AND2_var):
+              subterm(x, P_AND1_var) OR subterm(x, P_AND2_var),
+            P_NEG(P_NEG1_var): subterm(x, P_NEG1_var),
+            P_T(P_T1_var): FALSE
+         ENDCASES;
+
+  <<:  (well_founded?[simple_prop]) =
+      LAMBDA (x, y: simple_prop):
+        CASES y
+          OF P_OR(P_OR1_var, P_OR2_var):
+               (x = P_OR1_var OR x << P_OR1_var) OR
+                x = P_OR2_var OR x << P_OR2_var,
+             P_AND(P_AND1_var, P_AND2_var):
+               (x = P_AND1_var OR x << P_AND1_var) OR
+                x = P_AND2_var OR x << P_AND2_var,
+             P_NEG(P_NEG1_var): x = P_NEG1_var OR x << P_NEG1_var,
+             P_T(P_T1_var): FALSE
+          ENDCASES;
+
+  simple_prop_well_founded: AXIOM well_founded?[simple_prop](<<);
+
+  reduce_nat(OR?_fun, AND?_fun: [[nat, nat] -> nat],
+             NEG?_fun: [nat -> nat], T?_fun: [atom_prop -> nat]):
+   [simple_prop -> nat] =
+      LAMBDA (simple_prop_adtvar: simple_prop):
+        LET red: [simple_prop -> nat] =
+              reduce_nat(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES simple_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var)),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var)),
+               P_NEG(P_NEG1_var): NEG?_fun(red(P_NEG1_var)),
+               P_T(P_T1_var): T?_fun(P_T1_var)
+            ENDCASES;
+
+  REDUCE_nat(OR?_fun, AND?_fun: [[nat, nat, simple_prop] -> nat],
+             NEG?_fun: [[nat, simple_prop] -> nat],
+             T?_fun: [[atom_prop, simple_prop] -> nat]):
+   [simple_prop -> nat] =
+      LAMBDA (simple_prop_adtvar: simple_prop):
+        LET red: [simple_prop -> nat] =
+              REDUCE_nat(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES simple_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var),
+                         simple_prop_adtvar),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var),
+                          simple_prop_adtvar),
+               P_NEG(P_NEG1_var):
+                 NEG?_fun(red(P_NEG1_var), simple_prop_adtvar),
+               P_T(P_T1_var): T?_fun(P_T1_var, simple_prop_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(OR?_fun, AND?_fun: [[ordinal, ordinal] -> ordinal],
+                 NEG?_fun: [ordinal -> ordinal],
+                 T?_fun: [atom_prop -> ordinal]):
+   [simple_prop -> ordinal] =
+      LAMBDA (simple_prop_adtvar: simple_prop):
+        LET red: [simple_prop -> ordinal] =
+              reduce_ordinal(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES simple_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var)),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var)),
+               P_NEG(P_NEG1_var): NEG?_fun(red(P_NEG1_var)),
+               P_T(P_T1_var): T?_fun(P_T1_var)
+            ENDCASES;
+
+  REDUCE_ordinal(OR?_fun,
+                 AND?_fun: [[ordinal, ordinal, simple_prop] -> ordinal],
+                 NEG?_fun: [[ordinal, simple_prop] -> ordinal],
+                 T?_fun: [[atom_prop, simple_prop] -> ordinal]):
+   [simple_prop -> ordinal] =
+      LAMBDA (simple_prop_adtvar: simple_prop):
+        LET red: [simple_prop -> ordinal] =
+              REDUCE_ordinal(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES simple_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var),
+                         simple_prop_adtvar),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var),
+                          simple_prop_adtvar),
+               P_NEG(P_NEG1_var):
+                 NEG?_fun(red(P_NEG1_var), simple_prop_adtvar),
+               P_T(P_T1_var): T?_fun(P_T1_var, simple_prop_adtvar)
+            ENDCASES;
+ END simple_prop_adt
+
+simple_prop_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING atom_prop
+
+  IMPORTING simple_prop_adt
+
+  reduce(OR?_fun, AND?_fun: [[range, range] -> range],
+         NEG?_fun: [range -> range], T?_fun: [atom_prop -> range]):
+   [simple_prop -> range] =
+      LAMBDA (simple_prop_adtvar: simple_prop):
+        LET red: [simple_prop -> range] =
+              reduce(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES simple_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var)),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var)),
+               P_NEG(P_NEG1_var): NEG?_fun(red(P_NEG1_var)),
+               P_T(P_T1_var): T?_fun(P_T1_var)
+            ENDCASES;
+
+  REDUCE(OR?_fun, AND?_fun: [[range, range, simple_prop] -> range],
+         NEG?_fun: [[range, simple_prop] -> range],
+         T?_fun: [[atom_prop, simple_prop] -> range]):
+   [simple_prop -> range] =
+      LAMBDA (simple_prop_adtvar: simple_prop):
+        LET red: [simple_prop -> range] =
+              REDUCE(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES simple_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var),
+                         simple_prop_adtvar),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var),
+                          simple_prop_adtvar),
+               P_NEG(P_NEG1_var):
+                 NEG?_fun(red(P_NEG1_var), simple_prop_adtvar),
+               P_T(P_T1_var): T?_fun(P_T1_var, simple_prop_adtvar)
+            ENDCASES;
+ END simple_prop_adt_reduce

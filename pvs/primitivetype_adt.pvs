@@ -1,0 +1,65 @@
+%%% ADT file generated from evspaces
+
+primitivetype_adt: THEORY
+ BEGIN
+
+  primitivetype: TYPE
+
+  BoolType?, IntType?: [primitivetype -> boolean]
+
+  BoolType: (BoolType?)
+
+  IntType: (IntType?)
+
+  primitivetype_ord: [primitivetype -> upto(1)]
+
+  primitivetype_ord_defaxiom: AXIOM
+    primitivetype_ord(BoolType) = 0 AND primitivetype_ord(IntType) = 1;
+
+  ord(x: primitivetype): upto(1) =
+      CASES x OF BoolType: 0, IntType: 1 ENDCASES
+
+  primitivetype_inclusive: AXIOM
+    FORALL (primitivetype_var: primitivetype):
+      BoolType?(primitivetype_var) OR IntType?(primitivetype_var);
+
+  primitivetype_induction: AXIOM
+    FORALL (p: [primitivetype -> boolean]):
+      p(BoolType) AND p(IntType) IMPLIES
+       FORALL (primitivetype_var: primitivetype): p(primitivetype_var);
+
+  subterm(x: primitivetype, y: primitivetype):  boolean = x = y;
+
+  <<:  (strict_well_founded?[primitivetype]) =
+      LAMBDA (x, y: primitivetype): FALSE;
+
+  primitivetype_well_founded: AXIOM strict_well_founded?[primitivetype](<<);
+ END primitivetype_adt
+
+primitivetype_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING primitivetype_adt
+
+  reduce(BoolType?_fun: range, IntType?_fun: range):
+        [primitivetype -> range] =
+      LAMBDA (primitivetype_adtvar: primitivetype):
+        LET red: [primitivetype -> range] =
+              reduce(BoolType?_fun, IntType?_fun)
+          IN
+          CASES primitivetype_adtvar
+            OF BoolType: BoolType?_fun, IntType: IntType?_fun
+            ENDCASES;
+
+  REDUCE(BoolType?_fun: [primitivetype -> range],
+         IntType?_fun: [primitivetype -> range]):
+        [primitivetype -> range] =
+      LAMBDA (primitivetype_adtvar: primitivetype):
+        LET red: [primitivetype -> range] =
+              REDUCE(BoolType?_fun, IntType?_fun)
+          IN
+          CASES primitivetype_adtvar
+            OF BoolType: BoolType?_fun(primitivetype_adtvar),
+               IntType: IntType?_fun(primitivetype_adtvar)
+            ENDCASES;
+ END primitivetype_adt_reduce

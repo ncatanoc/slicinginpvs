@@ -1,0 +1,337 @@
+%%% ADT file generated from evspaces
+
+atom_prop_adt: THEORY
+ BEGIN
+
+  IMPORTING constvar_prop
+
+  atom_prop: TYPE
+
+  LES?, LEQ?, NEQ?, EQ?, GRE?, GEQ?: [atom_prop -> boolean]
+
+  P_LT: [[constvar_prop, constvar_prop] -> (LES?)]
+
+  P_LE: [[constvar_prop, constvar_prop] -> (LEQ?)]
+
+  P_NE: [[constvar_prop, constvar_prop] -> (NEQ?)]
+
+  P_EQ: [[constvar_prop, constvar_prop] -> (EQ?)]
+
+  P_GT: [[constvar_prop, constvar_prop] -> (GRE?)]
+
+  P_GE: [[constvar_prop, constvar_prop] -> (GEQ?)]
+
+  psales1_: [(LES?) -> constvar_prop]
+
+  psales2_: [(LES?) -> constvar_prop]
+
+  psaleq1_: [(LEQ?) -> constvar_prop]
+
+  psaleq2_: [(LEQ?) -> constvar_prop]
+
+  psaneq1_: [(NEQ?) -> constvar_prop]
+
+  psaneq2_: [(NEQ?) -> constvar_prop]
+
+  psaeq1_: [(EQ?) -> constvar_prop]
+
+  psaeq2_: [(EQ?) -> constvar_prop]
+
+  psagre1_: [(GRE?) -> constvar_prop]
+
+  psagre2_: [(GRE?) -> constvar_prop]
+
+  psageq1_: [(GEQ?) -> constvar_prop]
+
+  psageq2_: [(GEQ?) -> constvar_prop]
+
+  atom_prop_ord: [atom_prop -> upto(5)]
+
+  atom_prop_ord_defaxiom: AXIOM
+         FORALL (psales1_: constvar_prop, psales2_: constvar_prop):
+           atom_prop_ord(P_LT(psales1_, psales2_)) = 0
+     AND FORALL (psaleq1_: constvar_prop, psaleq2_: constvar_prop):
+           atom_prop_ord(P_LE(psaleq1_, psaleq2_)) = 1
+     AND FORALL (psaneq1_: constvar_prop, psaneq2_: constvar_prop):
+           atom_prop_ord(P_NE(psaneq1_, psaneq2_)) = 2
+     AND FORALL (psaeq1_: constvar_prop, psaeq2_: constvar_prop):
+           atom_prop_ord(P_EQ(psaeq1_, psaeq2_)) = 3
+     AND FORALL (psagre1_: constvar_prop, psagre2_: constvar_prop):
+           atom_prop_ord(P_GT(psagre1_, psagre2_)) = 4
+     AND FORALL (psageq1_: constvar_prop, psageq2_: constvar_prop):
+           atom_prop_ord(P_GE(psageq1_, psageq2_)) = 5;
+
+  ord(x: atom_prop): upto(5) =
+      CASES x
+        OF P_LT(P_LT1_var, P_LT2_var): 0,
+           P_LE(P_LE1_var, P_LE2_var): 1,
+           P_NE(P_NE1_var, P_NE2_var): 2,
+           P_EQ(P_EQ1_var, P_EQ2_var): 3,
+           P_GT(P_GT1_var, P_GT2_var): 4,
+           P_GE(P_GE1_var, P_GE2_var): 5
+        ENDCASES
+
+  atom_prop_P_LT_extensionality: AXIOM
+    FORALL (LES?_var: (LES?), LES?_var2: (LES?)):
+      psales1_(LES?_var) = psales1_(LES?_var2) AND
+       psales2_(LES?_var) = psales2_(LES?_var2)
+       IMPLIES LES?_var = LES?_var2;
+
+  atom_prop_P_LT_eta: AXIOM
+    FORALL (LES?_var: (LES?)):
+      P_LT(psales1_(LES?_var), psales2_(LES?_var)) = LES?_var;
+
+  atom_prop_P_LE_extensionality: AXIOM
+    FORALL (LEQ?_var: (LEQ?), LEQ?_var2: (LEQ?)):
+      psaleq1_(LEQ?_var) = psaleq1_(LEQ?_var2) AND
+       psaleq2_(LEQ?_var) = psaleq2_(LEQ?_var2)
+       IMPLIES LEQ?_var = LEQ?_var2;
+
+  atom_prop_P_LE_eta: AXIOM
+    FORALL (LEQ?_var: (LEQ?)):
+      P_LE(psaleq1_(LEQ?_var), psaleq2_(LEQ?_var)) = LEQ?_var;
+
+  atom_prop_P_NE_extensionality: AXIOM
+    FORALL (NEQ?_var: (NEQ?), NEQ?_var2: (NEQ?)):
+      psaneq1_(NEQ?_var) = psaneq1_(NEQ?_var2) AND
+       psaneq2_(NEQ?_var) = psaneq2_(NEQ?_var2)
+       IMPLIES NEQ?_var = NEQ?_var2;
+
+  atom_prop_P_NE_eta: AXIOM
+    FORALL (NEQ?_var: (NEQ?)):
+      P_NE(psaneq1_(NEQ?_var), psaneq2_(NEQ?_var)) = NEQ?_var;
+
+  atom_prop_P_EQ_extensionality: AXIOM
+    FORALL (EQ?_var: (EQ?), EQ?_var2: (EQ?)):
+      psaeq1_(EQ?_var) = psaeq1_(EQ?_var2) AND
+       psaeq2_(EQ?_var) = psaeq2_(EQ?_var2)
+       IMPLIES EQ?_var = EQ?_var2;
+
+  atom_prop_P_EQ_eta: AXIOM
+    FORALL (EQ?_var: (EQ?)):
+      P_EQ(psaeq1_(EQ?_var), psaeq2_(EQ?_var)) = EQ?_var;
+
+  atom_prop_P_GT_extensionality: AXIOM
+    FORALL (GRE?_var: (GRE?), GRE?_var2: (GRE?)):
+      psagre1_(GRE?_var) = psagre1_(GRE?_var2) AND
+       psagre2_(GRE?_var) = psagre2_(GRE?_var2)
+       IMPLIES GRE?_var = GRE?_var2;
+
+  atom_prop_P_GT_eta: AXIOM
+    FORALL (GRE?_var: (GRE?)):
+      P_GT(psagre1_(GRE?_var), psagre2_(GRE?_var)) = GRE?_var;
+
+  atom_prop_P_GE_extensionality: AXIOM
+    FORALL (GEQ?_var: (GEQ?), GEQ?_var2: (GEQ?)):
+      psageq1_(GEQ?_var) = psageq1_(GEQ?_var2) AND
+       psageq2_(GEQ?_var) = psageq2_(GEQ?_var2)
+       IMPLIES GEQ?_var = GEQ?_var2;
+
+  atom_prop_P_GE_eta: AXIOM
+    FORALL (GEQ?_var: (GEQ?)):
+      P_GE(psageq1_(GEQ?_var), psageq2_(GEQ?_var)) = GEQ?_var;
+
+  atom_prop_psales1__P_LT: AXIOM
+    FORALL (P_LT1_var: constvar_prop, P_LT2_var: constvar_prop):
+      psales1_(P_LT(P_LT1_var, P_LT2_var)) = P_LT1_var;
+
+  atom_prop_psales2__P_LT: AXIOM
+    FORALL (P_LT1_var: constvar_prop, P_LT2_var: constvar_prop):
+      psales2_(P_LT(P_LT1_var, P_LT2_var)) = P_LT2_var;
+
+  atom_prop_psaleq1__P_LE: AXIOM
+    FORALL (P_LE1_var: constvar_prop, P_LE2_var: constvar_prop):
+      psaleq1_(P_LE(P_LE1_var, P_LE2_var)) = P_LE1_var;
+
+  atom_prop_psaleq2__P_LE: AXIOM
+    FORALL (P_LE1_var: constvar_prop, P_LE2_var: constvar_prop):
+      psaleq2_(P_LE(P_LE1_var, P_LE2_var)) = P_LE2_var;
+
+  atom_prop_psaneq1__P_NE: AXIOM
+    FORALL (P_NE1_var: constvar_prop, P_NE2_var: constvar_prop):
+      psaneq1_(P_NE(P_NE1_var, P_NE2_var)) = P_NE1_var;
+
+  atom_prop_psaneq2__P_NE: AXIOM
+    FORALL (P_NE1_var: constvar_prop, P_NE2_var: constvar_prop):
+      psaneq2_(P_NE(P_NE1_var, P_NE2_var)) = P_NE2_var;
+
+  atom_prop_psaeq1__P_EQ: AXIOM
+    FORALL (P_EQ1_var: constvar_prop, P_EQ2_var: constvar_prop):
+      psaeq1_(P_EQ(P_EQ1_var, P_EQ2_var)) = P_EQ1_var;
+
+  atom_prop_psaeq2__P_EQ: AXIOM
+    FORALL (P_EQ1_var: constvar_prop, P_EQ2_var: constvar_prop):
+      psaeq2_(P_EQ(P_EQ1_var, P_EQ2_var)) = P_EQ2_var;
+
+  atom_prop_psagre1__P_GT: AXIOM
+    FORALL (P_GT1_var: constvar_prop, P_GT2_var: constvar_prop):
+      psagre1_(P_GT(P_GT1_var, P_GT2_var)) = P_GT1_var;
+
+  atom_prop_psagre2__P_GT: AXIOM
+    FORALL (P_GT1_var: constvar_prop, P_GT2_var: constvar_prop):
+      psagre2_(P_GT(P_GT1_var, P_GT2_var)) = P_GT2_var;
+
+  atom_prop_psageq1__P_GE: AXIOM
+    FORALL (P_GE1_var: constvar_prop, P_GE2_var: constvar_prop):
+      psageq1_(P_GE(P_GE1_var, P_GE2_var)) = P_GE1_var;
+
+  atom_prop_psageq2__P_GE: AXIOM
+    FORALL (P_GE1_var: constvar_prop, P_GE2_var: constvar_prop):
+      psageq2_(P_GE(P_GE1_var, P_GE2_var)) = P_GE2_var;
+
+  atom_prop_inclusive: AXIOM
+    FORALL (atom_prop_var: atom_prop):
+          LES?(atom_prop_var) OR LEQ?(atom_prop_var) OR NEQ?(atom_prop_var)
+       OR EQ?(atom_prop_var) OR GRE?(atom_prop_var) OR GEQ?(atom_prop_var);
+
+  atom_prop_induction: AXIOM
+    FORALL (p: [atom_prop -> boolean]):
+      (     FORALL (P_LT1_var: constvar_prop, P_LT2_var: constvar_prop):
+              p(P_LT(P_LT1_var, P_LT2_var))
+        AND FORALL (P_LE1_var: constvar_prop, P_LE2_var: constvar_prop):
+              p(P_LE(P_LE1_var, P_LE2_var))
+        AND FORALL (P_NE1_var: constvar_prop, P_NE2_var: constvar_prop):
+              p(P_NE(P_NE1_var, P_NE2_var))
+        AND FORALL (P_EQ1_var: constvar_prop, P_EQ2_var: constvar_prop):
+              p(P_EQ(P_EQ1_var, P_EQ2_var))
+        AND FORALL (P_GT1_var: constvar_prop, P_GT2_var: constvar_prop):
+              p(P_GT(P_GT1_var, P_GT2_var))
+        AND FORALL (P_GE1_var: constvar_prop, P_GE2_var: constvar_prop):
+              p(P_GE(P_GE1_var, P_GE2_var)))
+       IMPLIES (FORALL (atom_prop_var: atom_prop): p(atom_prop_var));
+
+  subterm(x, y: atom_prop):  boolean = x = y;
+
+  <<:  (well_founded?[atom_prop]) = LAMBDA (x, y: atom_prop): FALSE;
+
+  atom_prop_well_founded: AXIOM well_founded?[atom_prop](<<);
+
+  reduce_nat(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+             GEQ?_fun: [[constvar_prop, constvar_prop] -> nat]):
+   [atom_prop -> nat] =
+      LAMBDA (atom_prop_adtvar: atom_prop):
+        LET red: [atom_prop -> nat] =
+              reduce_nat(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+                         GEQ?_fun)
+          IN
+          CASES atom_prop_adtvar
+            OF P_LT(P_LT1_var, P_LT2_var): LES?_fun(P_LT1_var, P_LT2_var),
+               P_LE(P_LE1_var, P_LE2_var): LEQ?_fun(P_LE1_var, P_LE2_var),
+               P_NE(P_NE1_var, P_NE2_var): NEQ?_fun(P_NE1_var, P_NE2_var),
+               P_EQ(P_EQ1_var, P_EQ2_var): EQ?_fun(P_EQ1_var, P_EQ2_var),
+               P_GT(P_GT1_var, P_GT2_var): GRE?_fun(P_GT1_var, P_GT2_var),
+               P_GE(P_GE1_var, P_GE2_var): GEQ?_fun(P_GE1_var, P_GE2_var)
+            ENDCASES;
+
+  REDUCE_nat(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+             GEQ?_fun: [[constvar_prop, constvar_prop, atom_prop] -> nat]):
+   [atom_prop -> nat] =
+      LAMBDA (atom_prop_adtvar: atom_prop):
+        LET red: [atom_prop -> nat] =
+              REDUCE_nat(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+                         GEQ?_fun)
+          IN
+          CASES atom_prop_adtvar
+            OF P_LT(P_LT1_var, P_LT2_var):
+                 LES?_fun(P_LT1_var, P_LT2_var, atom_prop_adtvar),
+               P_LE(P_LE1_var, P_LE2_var):
+                 LEQ?_fun(P_LE1_var, P_LE2_var, atom_prop_adtvar),
+               P_NE(P_NE1_var, P_NE2_var):
+                 NEQ?_fun(P_NE1_var, P_NE2_var, atom_prop_adtvar),
+               P_EQ(P_EQ1_var, P_EQ2_var):
+                 EQ?_fun(P_EQ1_var, P_EQ2_var, atom_prop_adtvar),
+               P_GT(P_GT1_var, P_GT2_var):
+                 GRE?_fun(P_GT1_var, P_GT2_var, atom_prop_adtvar),
+               P_GE(P_GE1_var, P_GE2_var):
+                 GEQ?_fun(P_GE1_var, P_GE2_var, atom_prop_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+                 GEQ?_fun: [[constvar_prop, constvar_prop] -> ordinal]):
+   [atom_prop -> ordinal] =
+      LAMBDA (atom_prop_adtvar: atom_prop):
+        LET red: [atom_prop -> ordinal] =
+              reduce_ordinal(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun,
+                             GRE?_fun, GEQ?_fun)
+          IN
+          CASES atom_prop_adtvar
+            OF P_LT(P_LT1_var, P_LT2_var): LES?_fun(P_LT1_var, P_LT2_var),
+               P_LE(P_LE1_var, P_LE2_var): LEQ?_fun(P_LE1_var, P_LE2_var),
+               P_NE(P_NE1_var, P_NE2_var): NEQ?_fun(P_NE1_var, P_NE2_var),
+               P_EQ(P_EQ1_var, P_EQ2_var): EQ?_fun(P_EQ1_var, P_EQ2_var),
+               P_GT(P_GT1_var, P_GT2_var): GRE?_fun(P_GT1_var, P_GT2_var),
+               P_GE(P_GE1_var, P_GE2_var): GEQ?_fun(P_GE1_var, P_GE2_var)
+            ENDCASES;
+
+  REDUCE_ordinal(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+                 GEQ?_fun:
+                   [[constvar_prop, constvar_prop, atom_prop] -> ordinal]):
+   [atom_prop -> ordinal] =
+      LAMBDA (atom_prop_adtvar: atom_prop):
+        LET red: [atom_prop -> ordinal] =
+              REDUCE_ordinal(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun,
+                             GRE?_fun, GEQ?_fun)
+          IN
+          CASES atom_prop_adtvar
+            OF P_LT(P_LT1_var, P_LT2_var):
+                 LES?_fun(P_LT1_var, P_LT2_var, atom_prop_adtvar),
+               P_LE(P_LE1_var, P_LE2_var):
+                 LEQ?_fun(P_LE1_var, P_LE2_var, atom_prop_adtvar),
+               P_NE(P_NE1_var, P_NE2_var):
+                 NEQ?_fun(P_NE1_var, P_NE2_var, atom_prop_adtvar),
+               P_EQ(P_EQ1_var, P_EQ2_var):
+                 EQ?_fun(P_EQ1_var, P_EQ2_var, atom_prop_adtvar),
+               P_GT(P_GT1_var, P_GT2_var):
+                 GRE?_fun(P_GT1_var, P_GT2_var, atom_prop_adtvar),
+               P_GE(P_GE1_var, P_GE2_var):
+                 GEQ?_fun(P_GE1_var, P_GE2_var, atom_prop_adtvar)
+            ENDCASES;
+ END atom_prop_adt
+
+atom_prop_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING constvar_prop
+
+  IMPORTING atom_prop_adt
+
+  reduce(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+         GEQ?_fun: [[constvar_prop, constvar_prop] -> range]):
+   [atom_prop -> range] =
+      LAMBDA (atom_prop_adtvar: atom_prop):
+        LET red: [atom_prop -> range] =
+              reduce(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+                     GEQ?_fun)
+          IN
+          CASES atom_prop_adtvar
+            OF P_LT(P_LT1_var, P_LT2_var): LES?_fun(P_LT1_var, P_LT2_var),
+               P_LE(P_LE1_var, P_LE2_var): LEQ?_fun(P_LE1_var, P_LE2_var),
+               P_NE(P_NE1_var, P_NE2_var): NEQ?_fun(P_NE1_var, P_NE2_var),
+               P_EQ(P_EQ1_var, P_EQ2_var): EQ?_fun(P_EQ1_var, P_EQ2_var),
+               P_GT(P_GT1_var, P_GT2_var): GRE?_fun(P_GT1_var, P_GT2_var),
+               P_GE(P_GE1_var, P_GE2_var): GEQ?_fun(P_GE1_var, P_GE2_var)
+            ENDCASES;
+
+  REDUCE(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+         GEQ?_fun: [[constvar_prop, constvar_prop, atom_prop] -> range]):
+   [atom_prop -> range] =
+      LAMBDA (atom_prop_adtvar: atom_prop):
+        LET red: [atom_prop -> range] =
+              REDUCE(LES?_fun, LEQ?_fun, NEQ?_fun, EQ?_fun, GRE?_fun,
+                     GEQ?_fun)
+          IN
+          CASES atom_prop_adtvar
+            OF P_LT(P_LT1_var, P_LT2_var):
+                 LES?_fun(P_LT1_var, P_LT2_var, atom_prop_adtvar),
+               P_LE(P_LE1_var, P_LE2_var):
+                 LEQ?_fun(P_LE1_var, P_LE2_var, atom_prop_adtvar),
+               P_NE(P_NE1_var, P_NE2_var):
+                 NEQ?_fun(P_NE1_var, P_NE2_var, atom_prop_adtvar),
+               P_EQ(P_EQ1_var, P_EQ2_var):
+                 EQ?_fun(P_EQ1_var, P_EQ2_var, atom_prop_adtvar),
+               P_GT(P_GT1_var, P_GT2_var):
+                 GRE?_fun(P_GT1_var, P_GT2_var, atom_prop_adtvar),
+               P_GE(P_GE1_var, P_GE2_var):
+                 GEQ?_fun(P_GE1_var, P_GE2_var, atom_prop_adtvar)
+            ENDCASES;
+ END atom_prop_adt_reduce

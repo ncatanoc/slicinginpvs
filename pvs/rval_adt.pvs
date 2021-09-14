@@ -1,0 +1,168 @@
+%%% ADT file generated from evspaces
+
+rval_adt: THEORY
+ BEGIN
+
+  rval: TYPE
+
+  IMPORTING obj
+
+  Oref?, Ival?, Bval?: [rval -> boolean]
+
+  obj_: [(Oref?) -> obj]
+
+  nat_: [(Ival?) -> nat]
+
+  bool_: [(Bval?) -> bool]
+
+  Oref: [obj -> (Oref?)]
+
+  Ival: [nat -> (Ival?)]
+
+  Bval: [bool -> (Bval?)]
+
+  rval_ord: [rval -> upto(2)]
+
+  rval_ord_defaxiom: AXIOM
+    (FORALL (obj_: obj): rval_ord(Oref(obj_)) = 0) AND
+     (FORALL (nat_: nat): rval_ord(Ival(nat_)) = 1) AND
+      FORALL (bool_: bool): rval_ord(Bval(bool_)) = 2;
+
+  ord(x: rval): upto(2) =
+      CASES x OF Oref(Oref1_var): 0, Ival(Ival1_var): 1, Bval(Bval1_var): 2
+        ENDCASES
+
+  rval_Oref_extensionality: AXIOM
+    FORALL (Oref?_var: (Oref?), Oref?_var2: (Oref?)):
+      obj_(Oref?_var) = obj_(Oref?_var2) IMPLIES Oref?_var = Oref?_var2;
+
+  rval_Oref_eta: AXIOM
+    FORALL (Oref?_var: (Oref?)): Oref(obj_(Oref?_var)) = Oref?_var;
+
+  rval_Ival_extensionality: AXIOM
+    FORALL (Ival?_var: (Ival?), Ival?_var2: (Ival?)):
+      nat_(Ival?_var) = nat_(Ival?_var2) IMPLIES Ival?_var = Ival?_var2;
+
+  rval_Ival_eta: AXIOM
+    FORALL (Ival?_var: (Ival?)): Ival(nat_(Ival?_var)) = Ival?_var;
+
+  rval_Bval_extensionality: AXIOM
+    FORALL (Bval?_var: (Bval?), Bval?_var2: (Bval?)):
+      bool_(Bval?_var) = bool_(Bval?_var2) IMPLIES Bval?_var = Bval?_var2;
+
+  rval_Bval_eta: AXIOM
+    FORALL (Bval?_var: (Bval?)): Bval(bool_(Bval?_var)) = Bval?_var;
+
+  rval_obj__Oref: AXIOM
+    FORALL (Oref1_var: obj): obj_(Oref(Oref1_var)) = Oref1_var;
+
+  rval_nat__Ival: AXIOM
+    FORALL (Ival1_var: nat): nat_(Ival(Ival1_var)) = Ival1_var;
+
+  rval_bool__Bval: AXIOM
+    FORALL (Bval1_var: bool): bool_(Bval(Bval1_var)) = Bval1_var;
+
+  rval_inclusive: AXIOM
+    FORALL (rval_var: rval):
+      Oref?(rval_var) OR Ival?(rval_var) OR Bval?(rval_var);
+
+  rval_induction: AXIOM
+    FORALL (p: [rval -> boolean]):
+      ((FORALL (Oref1_var: obj): p(Oref(Oref1_var))) AND
+        (FORALL (Ival1_var: nat): p(Ival(Ival1_var))) AND
+         FORALL (Bval1_var: bool): p(Bval(Bval1_var)))
+       IMPLIES FORALL (rval_var: rval): p(rval_var);
+
+  subterm(x: rval, y: rval):  boolean = x = y;
+
+  <<:  (strict_well_founded?[rval]) = LAMBDA (x, y: rval): FALSE;
+
+  rval_well_founded: AXIOM strict_well_founded?[rval](<<);
+
+  reduce_nat(Oref?_fun: [obj -> nat], Ival?_fun: [nat -> nat],
+             Bval?_fun: [bool -> nat]):
+        [rval -> nat] =
+      LAMBDA (rval_adtvar: rval):
+        LET red: [rval -> nat] =
+              reduce_nat(Oref?_fun, Ival?_fun, Bval?_fun)
+          IN
+          CASES rval_adtvar
+            OF Oref(Oref1_var): Oref?_fun(Oref1_var),
+               Ival(Ival1_var): Ival?_fun(Ival1_var),
+               Bval(Bval1_var): Bval?_fun(Bval1_var)
+            ENDCASES;
+
+  REDUCE_nat(Oref?_fun: [[obj, rval] -> nat],
+             Ival?_fun: [[nat, rval] -> nat],
+             Bval?_fun: [[bool, rval] -> nat]):
+        [rval -> nat] =
+      LAMBDA (rval_adtvar: rval):
+        LET red: [rval -> nat] =
+              REDUCE_nat(Oref?_fun, Ival?_fun, Bval?_fun)
+          IN
+          CASES rval_adtvar
+            OF Oref(Oref1_var): Oref?_fun(Oref1_var, rval_adtvar),
+               Ival(Ival1_var): Ival?_fun(Ival1_var, rval_adtvar),
+               Bval(Bval1_var): Bval?_fun(Bval1_var, rval_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(Oref?_fun: [obj -> ordinal], Ival?_fun: [nat -> ordinal],
+                 Bval?_fun: [bool -> ordinal]):
+        [rval -> ordinal] =
+      LAMBDA (rval_adtvar: rval):
+        LET red: [rval -> ordinal] =
+              reduce_ordinal(Oref?_fun, Ival?_fun, Bval?_fun)
+          IN
+          CASES rval_adtvar
+            OF Oref(Oref1_var): Oref?_fun(Oref1_var),
+               Ival(Ival1_var): Ival?_fun(Ival1_var),
+               Bval(Bval1_var): Bval?_fun(Bval1_var)
+            ENDCASES;
+
+  REDUCE_ordinal(Oref?_fun: [[obj, rval] -> ordinal],
+                 Ival?_fun: [[nat, rval] -> ordinal],
+                 Bval?_fun: [[bool, rval] -> ordinal]):
+        [rval -> ordinal] =
+      LAMBDA (rval_adtvar: rval):
+        LET red: [rval -> ordinal] =
+              REDUCE_ordinal(Oref?_fun, Ival?_fun, Bval?_fun)
+          IN
+          CASES rval_adtvar
+            OF Oref(Oref1_var): Oref?_fun(Oref1_var, rval_adtvar),
+               Ival(Ival1_var): Ival?_fun(Ival1_var, rval_adtvar),
+               Bval(Bval1_var): Bval?_fun(Bval1_var, rval_adtvar)
+            ENDCASES;
+ END rval_adt
+
+rval_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING rval_adt
+
+  IMPORTING obj
+
+  reduce(Oref?_fun: [obj -> range], Ival?_fun: [nat -> range],
+         Bval?_fun: [bool -> range]):
+        [rval -> range] =
+      LAMBDA (rval_adtvar: rval):
+        LET red: [rval -> range] = reduce(Oref?_fun, Ival?_fun, Bval?_fun)
+          IN
+          CASES rval_adtvar
+            OF Oref(Oref1_var): Oref?_fun(Oref1_var),
+               Ival(Ival1_var): Ival?_fun(Ival1_var),
+               Bval(Bval1_var): Bval?_fun(Bval1_var)
+            ENDCASES;
+
+  REDUCE(Oref?_fun: [[obj, rval] -> range],
+         Ival?_fun: [[nat, rval] -> range],
+         Bval?_fun: [[bool, rval] -> range]):
+        [rval -> range] =
+      LAMBDA (rval_adtvar: rval):
+        LET red: [rval -> range] = REDUCE(Oref?_fun, Ival?_fun, Bval?_fun)
+          IN
+          CASES rval_adtvar
+            OF Oref(Oref1_var): Oref?_fun(Oref1_var, rval_adtvar),
+               Ival(Ival1_var): Ival?_fun(Ival1_var, rval_adtvar),
+               Bval(Bval1_var): Bval?_fun(Bval1_var, rval_adtvar)
+            ENDCASES;
+ END rval_adt_reduce

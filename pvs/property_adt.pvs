@@ -1,0 +1,334 @@
+%%% ADT file generated from evspaces
+
+property_adt: THEORY
+ BEGIN
+
+  property: TYPE
+
+  IMPORTING state_prop
+
+  PEX?, PEG?, PEU?, PEF?, PAX?, PAF?, PAG?, PAU?: [property -> boolean]
+
+  p_: [property -> state_prop]
+
+  q_: [{x: property | PEU?(x) OR PAU?(x)} -> state_prop]
+
+  PEX: [state_prop -> (PEX?)]
+
+  PEG: [state_prop -> (PEG?)]
+
+  PEU: [[state_prop, state_prop] -> (PEU?)]
+
+  PEF: [state_prop -> (PEF?)]
+
+  PAX: [state_prop -> (PAX?)]
+
+  PAF: [state_prop -> (PAF?)]
+
+  PAG: [state_prop -> (PAG?)]
+
+  PAU: [[state_prop, state_prop] -> (PAU?)]
+
+  property_ord: [property -> upto(7)]
+
+  property_ord_defaxiom: AXIOM
+         (FORALL (p_: state_prop): property_ord(PEX(p_)) = 0)
+     AND (FORALL (p_: state_prop): property_ord(PEG(p_)) = 1)
+     AND (FORALL (p_: state_prop, q_: state_prop):
+            property_ord(PEU(p_, q_)) = 2)
+     AND (FORALL (p_: state_prop): property_ord(PEF(p_)) = 3)
+     AND (FORALL (p_: state_prop): property_ord(PAX(p_)) = 4)
+     AND (FORALL (p_: state_prop): property_ord(PAF(p_)) = 5)
+     AND (FORALL (p_: state_prop): property_ord(PAG(p_)) = 6)
+     AND FORALL (p_: state_prop, q_: state_prop):
+           property_ord(PAU(p_, q_)) = 7;
+
+  ord(x: property): upto(7) =
+      CASES x
+        OF PEX(PEX1_var): 0,
+           PEG(PEG1_var): 1,
+           PEU(PEU1_var, PEU2_var): 2,
+           PEF(PEF1_var): 3,
+           PAX(PAX1_var): 4,
+           PAF(PAF1_var): 5,
+           PAG(PAG1_var): 6,
+           PAU(PAU1_var, PAU2_var): 7
+        ENDCASES
+
+  property_PEX_extensionality: AXIOM
+    FORALL (PEX?_var: (PEX?), PEX?_var2: (PEX?)):
+      p_(PEX?_var) = p_(PEX?_var2) IMPLIES PEX?_var = PEX?_var2;
+
+  property_PEX_eta: AXIOM
+    FORALL (PEX?_var: (PEX?)): PEX(p_(PEX?_var)) = PEX?_var;
+
+  property_PEG_extensionality: AXIOM
+    FORALL (PEG?_var: (PEG?), PEG?_var2: (PEG?)):
+      p_(PEG?_var) = p_(PEG?_var2) IMPLIES PEG?_var = PEG?_var2;
+
+  property_PEG_eta: AXIOM
+    FORALL (PEG?_var: (PEG?)): PEG(p_(PEG?_var)) = PEG?_var;
+
+  property_PEU_extensionality: AXIOM
+    FORALL (PEU?_var: (PEU?), PEU?_var2: (PEU?)):
+      p_(PEU?_var) = p_(PEU?_var2) AND q_(PEU?_var) = q_(PEU?_var2) IMPLIES
+       PEU?_var = PEU?_var2;
+
+  property_PEU_eta: AXIOM
+    FORALL (PEU?_var: (PEU?)): PEU(p_(PEU?_var), q_(PEU?_var)) = PEU?_var;
+
+  property_PEF_extensionality: AXIOM
+    FORALL (PEF?_var: (PEF?), PEF?_var2: (PEF?)):
+      p_(PEF?_var) = p_(PEF?_var2) IMPLIES PEF?_var = PEF?_var2;
+
+  property_PEF_eta: AXIOM
+    FORALL (PEF?_var: (PEF?)): PEF(p_(PEF?_var)) = PEF?_var;
+
+  property_PAX_extensionality: AXIOM
+    FORALL (PAX?_var: (PAX?), PAX?_var2: (PAX?)):
+      p_(PAX?_var) = p_(PAX?_var2) IMPLIES PAX?_var = PAX?_var2;
+
+  property_PAX_eta: AXIOM
+    FORALL (PAX?_var: (PAX?)): PAX(p_(PAX?_var)) = PAX?_var;
+
+  property_PAF_extensionality: AXIOM
+    FORALL (PAF?_var: (PAF?), PAF?_var2: (PAF?)):
+      p_(PAF?_var) = p_(PAF?_var2) IMPLIES PAF?_var = PAF?_var2;
+
+  property_PAF_eta: AXIOM
+    FORALL (PAF?_var: (PAF?)): PAF(p_(PAF?_var)) = PAF?_var;
+
+  property_PAG_extensionality: AXIOM
+    FORALL (PAG?_var: (PAG?), PAG?_var2: (PAG?)):
+      p_(PAG?_var) = p_(PAG?_var2) IMPLIES PAG?_var = PAG?_var2;
+
+  property_PAG_eta: AXIOM
+    FORALL (PAG?_var: (PAG?)): PAG(p_(PAG?_var)) = PAG?_var;
+
+  property_PAU_extensionality: AXIOM
+    FORALL (PAU?_var: (PAU?), PAU?_var2: (PAU?)):
+      p_(PAU?_var) = p_(PAU?_var2) AND q_(PAU?_var) = q_(PAU?_var2) IMPLIES
+       PAU?_var = PAU?_var2;
+
+  property_PAU_eta: AXIOM
+    FORALL (PAU?_var: (PAU?)): PAU(p_(PAU?_var), q_(PAU?_var)) = PAU?_var;
+
+  property_p__PEX: AXIOM
+    FORALL (PEX1_var: state_prop): p_(PEX(PEX1_var)) = PEX1_var;
+
+  property_p__PEG: AXIOM
+    FORALL (PEG1_var: state_prop): p_(PEG(PEG1_var)) = PEG1_var;
+
+  property_p__PEU: AXIOM
+    FORALL (PEU1_var: state_prop, PEU2_var: state_prop):
+      p_(PEU(PEU1_var, PEU2_var)) = PEU1_var;
+
+  property_q__PEU: AXIOM
+    FORALL (PEU1_var: state_prop, PEU2_var: state_prop):
+      q_(PEU(PEU1_var, PEU2_var)) = PEU2_var;
+
+  property_p__PEF: AXIOM
+    FORALL (PEF1_var: state_prop): p_(PEF(PEF1_var)) = PEF1_var;
+
+  property_p__PAX: AXIOM
+    FORALL (PAX1_var: state_prop): p_(PAX(PAX1_var)) = PAX1_var;
+
+  property_p__PAF: AXIOM
+    FORALL (PAF1_var: state_prop): p_(PAF(PAF1_var)) = PAF1_var;
+
+  property_p__PAG: AXIOM
+    FORALL (PAG1_var: state_prop): p_(PAG(PAG1_var)) = PAG1_var;
+
+  property_p__PAU: AXIOM
+    FORALL (PAU1_var: state_prop, PAU2_var: state_prop):
+      p_(PAU(PAU1_var, PAU2_var)) = PAU1_var;
+
+  property_q__PAU: AXIOM
+    FORALL (PAU1_var: state_prop, PAU2_var: state_prop):
+      q_(PAU(PAU1_var, PAU2_var)) = PAU2_var;
+
+  property_inclusive: AXIOM
+    FORALL (property_var: property):
+           PEX?(property_var) OR PEG?(property_var) OR PEU?(property_var)
+       OR PEF?(property_var) OR PAX?(property_var) OR PAF?(property_var)
+       OR PAG?(property_var) OR PAU?(property_var);
+
+  property_induction: AXIOM
+    FORALL (p: [property -> boolean]):
+      (     (FORALL (PEX1_var: state_prop): p(PEX(PEX1_var)))
+        AND (FORALL (PEG1_var: state_prop): p(PEG(PEG1_var)))
+        AND (FORALL (PEU1_var: state_prop, PEU2_var: state_prop):
+               p(PEU(PEU1_var, PEU2_var)))
+        AND (FORALL (PEF1_var: state_prop): p(PEF(PEF1_var)))
+        AND (FORALL (PAX1_var: state_prop): p(PAX(PAX1_var)))
+        AND (FORALL (PAF1_var: state_prop): p(PAF(PAF1_var)))
+        AND (FORALL (PAG1_var: state_prop): p(PAG(PAG1_var)))
+        AND FORALL (PAU1_var: state_prop, PAU2_var: state_prop):
+              p(PAU(PAU1_var, PAU2_var)))
+       IMPLIES FORALL (property_var: property): p(property_var);
+
+  subterm(x: property, y: property):  boolean = x = y;
+
+  <<:  (strict_well_founded?[property]) = LAMBDA (x, y: property): FALSE;
+
+  property_well_founded: AXIOM strict_well_founded?[property](<<);
+
+  reduce_nat(PEX?_fun: [state_prop -> nat], PEG?_fun: [state_prop -> nat],
+             PEU?_fun: [[state_prop, state_prop] -> nat],
+             PEF?_fun: [state_prop -> nat], PAX?_fun: [state_prop -> nat],
+             PAF?_fun: [state_prop -> nat], PAG?_fun: [state_prop -> nat],
+             PAU?_fun: [[state_prop, state_prop] -> nat]):
+        [property -> nat] =
+      LAMBDA (property_adtvar: property):
+        LET red: [property -> nat] =
+              reduce_nat(PEX?_fun, PEG?_fun, PEU?_fun, PEF?_fun, PAX?_fun,
+                         PAF?_fun, PAG?_fun, PAU?_fun)
+          IN
+          CASES property_adtvar
+            OF PEX(PEX1_var): PEX?_fun(PEX1_var),
+               PEG(PEG1_var): PEG?_fun(PEG1_var),
+               PEU(PEU1_var, PEU2_var): PEU?_fun(PEU1_var, PEU2_var),
+               PEF(PEF1_var): PEF?_fun(PEF1_var),
+               PAX(PAX1_var): PAX?_fun(PAX1_var),
+               PAF(PAF1_var): PAF?_fun(PAF1_var),
+               PAG(PAG1_var): PAG?_fun(PAG1_var),
+               PAU(PAU1_var, PAU2_var): PAU?_fun(PAU1_var, PAU2_var)
+            ENDCASES;
+
+  REDUCE_nat(PEX?_fun: [[state_prop, property] -> nat],
+             PEG?_fun: [[state_prop, property] -> nat],
+             PEU?_fun: [[state_prop, state_prop, property] -> nat],
+             PEF?_fun: [[state_prop, property] -> nat],
+             PAX?_fun: [[state_prop, property] -> nat],
+             PAF?_fun: [[state_prop, property] -> nat],
+             PAG?_fun: [[state_prop, property] -> nat],
+             PAU?_fun: [[state_prop, state_prop, property] -> nat]):
+        [property -> nat] =
+      LAMBDA (property_adtvar: property):
+        LET red: [property -> nat] =
+              REDUCE_nat(PEX?_fun, PEG?_fun, PEU?_fun, PEF?_fun, PAX?_fun,
+                         PAF?_fun, PAG?_fun, PAU?_fun)
+          IN
+          CASES property_adtvar
+            OF PEX(PEX1_var): PEX?_fun(PEX1_var, property_adtvar),
+               PEG(PEG1_var): PEG?_fun(PEG1_var, property_adtvar),
+               PEU(PEU1_var, PEU2_var):
+                 PEU?_fun(PEU1_var, PEU2_var, property_adtvar),
+               PEF(PEF1_var): PEF?_fun(PEF1_var, property_adtvar),
+               PAX(PAX1_var): PAX?_fun(PAX1_var, property_adtvar),
+               PAF(PAF1_var): PAF?_fun(PAF1_var, property_adtvar),
+               PAG(PAG1_var): PAG?_fun(PAG1_var, property_adtvar),
+               PAU(PAU1_var, PAU2_var):
+                 PAU?_fun(PAU1_var, PAU2_var, property_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(PEX?_fun: [state_prop -> ordinal],
+                 PEG?_fun: [state_prop -> ordinal],
+                 PEU?_fun: [[state_prop, state_prop] -> ordinal],
+                 PEF?_fun: [state_prop -> ordinal],
+                 PAX?_fun: [state_prop -> ordinal],
+                 PAF?_fun: [state_prop -> ordinal],
+                 PAG?_fun: [state_prop -> ordinal],
+                 PAU?_fun: [[state_prop, state_prop] -> ordinal]):
+        [property -> ordinal] =
+      LAMBDA (property_adtvar: property):
+        LET red: [property -> ordinal] =
+              reduce_ordinal(PEX?_fun, PEG?_fun, PEU?_fun, PEF?_fun,
+                             PAX?_fun, PAF?_fun, PAG?_fun, PAU?_fun)
+          IN
+          CASES property_adtvar
+            OF PEX(PEX1_var): PEX?_fun(PEX1_var),
+               PEG(PEG1_var): PEG?_fun(PEG1_var),
+               PEU(PEU1_var, PEU2_var): PEU?_fun(PEU1_var, PEU2_var),
+               PEF(PEF1_var): PEF?_fun(PEF1_var),
+               PAX(PAX1_var): PAX?_fun(PAX1_var),
+               PAF(PAF1_var): PAF?_fun(PAF1_var),
+               PAG(PAG1_var): PAG?_fun(PAG1_var),
+               PAU(PAU1_var, PAU2_var): PAU?_fun(PAU1_var, PAU2_var)
+            ENDCASES;
+
+  REDUCE_ordinal(PEX?_fun: [[state_prop, property] -> ordinal],
+                 PEG?_fun: [[state_prop, property] -> ordinal],
+                 PEU?_fun: [[state_prop, state_prop, property] -> ordinal],
+                 PEF?_fun: [[state_prop, property] -> ordinal],
+                 PAX?_fun: [[state_prop, property] -> ordinal],
+                 PAF?_fun: [[state_prop, property] -> ordinal],
+                 PAG?_fun: [[state_prop, property] -> ordinal],
+                 PAU?_fun:
+                   [[state_prop, state_prop, property] -> ordinal]):
+        [property -> ordinal] =
+      LAMBDA (property_adtvar: property):
+        LET red: [property -> ordinal] =
+              REDUCE_ordinal(PEX?_fun, PEG?_fun, PEU?_fun, PEF?_fun,
+                             PAX?_fun, PAF?_fun, PAG?_fun, PAU?_fun)
+          IN
+          CASES property_adtvar
+            OF PEX(PEX1_var): PEX?_fun(PEX1_var, property_adtvar),
+               PEG(PEG1_var): PEG?_fun(PEG1_var, property_adtvar),
+               PEU(PEU1_var, PEU2_var):
+                 PEU?_fun(PEU1_var, PEU2_var, property_adtvar),
+               PEF(PEF1_var): PEF?_fun(PEF1_var, property_adtvar),
+               PAX(PAX1_var): PAX?_fun(PAX1_var, property_adtvar),
+               PAF(PAF1_var): PAF?_fun(PAF1_var, property_adtvar),
+               PAG(PAG1_var): PAG?_fun(PAG1_var, property_adtvar),
+               PAU(PAU1_var, PAU2_var):
+                 PAU?_fun(PAU1_var, PAU2_var, property_adtvar)
+            ENDCASES;
+ END property_adt
+
+property_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING property_adt
+
+  IMPORTING state_prop
+
+  reduce(PEX?_fun: [state_prop -> range], PEG?_fun: [state_prop -> range],
+         PEU?_fun: [[state_prop, state_prop] -> range],
+         PEF?_fun: [state_prop -> range], PAX?_fun: [state_prop -> range],
+         PAF?_fun: [state_prop -> range], PAG?_fun: [state_prop -> range],
+         PAU?_fun: [[state_prop, state_prop] -> range]):
+        [property -> range] =
+      LAMBDA (property_adtvar: property):
+        LET red: [property -> range] =
+              reduce(PEX?_fun, PEG?_fun, PEU?_fun, PEF?_fun, PAX?_fun,
+                     PAF?_fun, PAG?_fun, PAU?_fun)
+          IN
+          CASES property_adtvar
+            OF PEX(PEX1_var): PEX?_fun(PEX1_var),
+               PEG(PEG1_var): PEG?_fun(PEG1_var),
+               PEU(PEU1_var, PEU2_var): PEU?_fun(PEU1_var, PEU2_var),
+               PEF(PEF1_var): PEF?_fun(PEF1_var),
+               PAX(PAX1_var): PAX?_fun(PAX1_var),
+               PAF(PAF1_var): PAF?_fun(PAF1_var),
+               PAG(PAG1_var): PAG?_fun(PAG1_var),
+               PAU(PAU1_var, PAU2_var): PAU?_fun(PAU1_var, PAU2_var)
+            ENDCASES;
+
+  REDUCE(PEX?_fun: [[state_prop, property] -> range],
+         PEG?_fun: [[state_prop, property] -> range],
+         PEU?_fun: [[state_prop, state_prop, property] -> range],
+         PEF?_fun: [[state_prop, property] -> range],
+         PAX?_fun: [[state_prop, property] -> range],
+         PAF?_fun: [[state_prop, property] -> range],
+         PAG?_fun: [[state_prop, property] -> range],
+         PAU?_fun: [[state_prop, state_prop, property] -> range]):
+        [property -> range] =
+      LAMBDA (property_adtvar: property):
+        LET red: [property -> range] =
+              REDUCE(PEX?_fun, PEG?_fun, PEU?_fun, PEF?_fun, PAX?_fun,
+                     PAF?_fun, PAG?_fun, PAU?_fun)
+          IN
+          CASES property_adtvar
+            OF PEX(PEX1_var): PEX?_fun(PEX1_var, property_adtvar),
+               PEG(PEG1_var): PEG?_fun(PEG1_var, property_adtvar),
+               PEU(PEU1_var, PEU2_var):
+                 PEU?_fun(PEU1_var, PEU2_var, property_adtvar),
+               PEF(PEF1_var): PEF?_fun(PEF1_var, property_adtvar),
+               PAX(PAX1_var): PAX?_fun(PAX1_var, property_adtvar),
+               PAF(PAF1_var): PAF?_fun(PAF1_var, property_adtvar),
+               PAG(PAG1_var): PAG?_fun(PAG1_var, property_adtvar),
+               PAU(PAU1_var, PAU2_var):
+                 PAU?_fun(PAU1_var, PAU2_var, property_adtvar)
+            ENDCASES;
+ END property_adt_reduce

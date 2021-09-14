@@ -1,0 +1,81 @@
+%%% ADT file generated from evspaces
+
+obj_adt: THEORY
+ BEGIN
+
+  obj: TYPE
+
+  Obj?: [obj -> boolean]
+
+  obj_: [obj -> string]
+
+  Obj: [string -> (Obj?)]
+
+  obj_ord: [obj -> upto(0)]
+
+  obj_ord_defaxiom: AXIOM FORALL (obj_: string): obj_ord(Obj(obj_)) = 0;
+
+  ord(x: obj): upto(0) = CASES x OF Obj(Obj1_var): 0 ENDCASES
+
+  obj_Obj_extensionality: AXIOM
+    FORALL (Obj?_var: (Obj?), Obj?_var2: (Obj?)):
+      obj_(Obj?_var) = obj_(Obj?_var2) IMPLIES Obj?_var = Obj?_var2;
+
+  obj_Obj_eta: AXIOM
+    FORALL (Obj?_var: (Obj?)): Obj(obj_(Obj?_var)) = Obj?_var;
+
+  obj_obj__Obj: AXIOM
+    FORALL (Obj1_var: string): obj_(Obj(Obj1_var)) = Obj1_var;
+
+  obj_inclusive: AXIOM FORALL (obj_var: obj): Obj?(obj_var);
+
+  obj_induction: AXIOM
+    FORALL (p: [obj -> boolean]):
+      (FORALL (Obj1_var: string): p(Obj(Obj1_var))) IMPLIES
+       FORALL (obj_var: obj): p(obj_var);
+
+  subterm(x: obj, y: obj):  boolean = x = y;
+
+  <<:  (strict_well_founded?[obj]) = LAMBDA (x, y: obj): FALSE;
+
+  obj_well_founded: AXIOM strict_well_founded?[obj](<<);
+
+  reduce_nat(Obj?_fun: [string -> nat]):  [obj -> nat] =
+      LAMBDA (obj_adtvar: obj):
+        LET red: [obj -> nat] = reduce_nat(Obj?_fun) IN
+          CASES obj_adtvar OF Obj(Obj1_var): Obj?_fun(Obj1_var) ENDCASES;
+
+  REDUCE_nat(Obj?_fun: [[string, obj] -> nat]):  [obj -> nat] =
+      LAMBDA (obj_adtvar: obj):
+        LET red: [obj -> nat] = REDUCE_nat(Obj?_fun) IN
+          CASES obj_adtvar OF Obj(Obj1_var): Obj?_fun(Obj1_var, obj_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(Obj?_fun: [string -> ordinal]):  [obj -> ordinal] =
+      LAMBDA (obj_adtvar: obj):
+        LET red: [obj -> ordinal] = reduce_ordinal(Obj?_fun) IN
+          CASES obj_adtvar OF Obj(Obj1_var): Obj?_fun(Obj1_var) ENDCASES;
+
+  REDUCE_ordinal(Obj?_fun: [[string, obj] -> ordinal]):  [obj -> ordinal] =
+      LAMBDA (obj_adtvar: obj):
+        LET red: [obj -> ordinal] = REDUCE_ordinal(Obj?_fun) IN
+          CASES obj_adtvar OF Obj(Obj1_var): Obj?_fun(Obj1_var, obj_adtvar)
+            ENDCASES;
+ END obj_adt
+
+obj_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING obj_adt
+
+  reduce(Obj?_fun: [string -> range]):  [obj -> range] =
+      LAMBDA (obj_adtvar: obj):
+        LET red: [obj -> range] = reduce(Obj?_fun) IN
+          CASES obj_adtvar OF Obj(Obj1_var): Obj?_fun(Obj1_var) ENDCASES;
+
+  REDUCE(Obj?_fun: [[string, obj] -> range]):  [obj -> range] =
+      LAMBDA (obj_adtvar: obj):
+        LET red: [obj -> range] = REDUCE(Obj?_fun) IN
+          CASES obj_adtvar OF Obj(Obj1_var): Obj?_fun(Obj1_var, obj_adtvar)
+            ENDCASES;
+ END obj_adt_reduce

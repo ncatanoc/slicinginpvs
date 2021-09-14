@@ -1,0 +1,123 @@
+%%% ADT file generated from evspaces
+
+fieldidentifier_adt: THEORY
+ BEGIN
+
+  fieldidentifier: TYPE
+
+  IMPORTING jtype
+
+  FId?: [fieldidentifier -> boolean]
+
+  identifier_: [fieldidentifier -> string]
+
+  jtype_: [fieldidentifier -> jtype]
+
+  FId: [[string, jtype] -> (FId?)]
+
+  fieldidentifier_ord: [fieldidentifier -> upto(0)]
+
+  fieldidentifier_ord_defaxiom: AXIOM
+    FORALL (identifier_: string, jtype_: jtype):
+      fieldidentifier_ord(FId(identifier_, jtype_)) = 0;
+
+  ord(x: fieldidentifier): upto(0) =
+      CASES x OF FId(FId1_var, FId2_var): 0 ENDCASES
+
+  fieldidentifier_FId_extensionality: AXIOM
+    FORALL (FId?_var: (FId?), FId?_var2: (FId?)):
+      identifier_(FId?_var) = identifier_(FId?_var2) AND
+       jtype_(FId?_var) = jtype_(FId?_var2)
+       IMPLIES FId?_var = FId?_var2;
+
+  fieldidentifier_FId_eta: AXIOM
+    FORALL (FId?_var: (FId?)):
+      FId(identifier_(FId?_var), jtype_(FId?_var)) = FId?_var;
+
+  fieldidentifier_identifier__FId: AXIOM
+    FORALL (FId1_var: string, FId2_var: jtype):
+      identifier_(FId(FId1_var, FId2_var)) = FId1_var;
+
+  fieldidentifier_jtype__FId: AXIOM
+    FORALL (FId1_var: string, FId2_var: jtype):
+      jtype_(FId(FId1_var, FId2_var)) = FId2_var;
+
+  fieldidentifier_inclusive: AXIOM
+    FORALL (fieldidentifier_var: fieldidentifier):
+      FId?(fieldidentifier_var);
+
+  fieldidentifier_induction: AXIOM
+    FORALL (p: [fieldidentifier -> boolean]):
+      (FORALL (FId1_var: string, FId2_var: jtype):
+         p(FId(FId1_var, FId2_var)))
+       IMPLIES
+       FORALL (fieldidentifier_var: fieldidentifier):
+         p(fieldidentifier_var);
+
+  subterm(x: fieldidentifier, y: fieldidentifier):  boolean = x = y;
+
+  <<:  (strict_well_founded?[fieldidentifier]) =
+      LAMBDA (x, y: fieldidentifier): FALSE;
+
+  fieldidentifier_well_founded: AXIOM
+    strict_well_founded?[fieldidentifier](<<);
+
+  reduce_nat(FId?_fun: [[string, jtype] -> nat]):
+        [fieldidentifier -> nat] =
+      LAMBDA (fieldidentifier_adtvar: fieldidentifier):
+        LET red: [fieldidentifier -> nat] = reduce_nat(FId?_fun) IN
+          CASES fieldidentifier_adtvar
+            OF FId(FId1_var, FId2_var): FId?_fun(FId1_var, FId2_var)
+            ENDCASES;
+
+  REDUCE_nat(FId?_fun: [[string, jtype, fieldidentifier] -> nat]):
+        [fieldidentifier -> nat] =
+      LAMBDA (fieldidentifier_adtvar: fieldidentifier):
+        LET red: [fieldidentifier -> nat] = REDUCE_nat(FId?_fun) IN
+          CASES fieldidentifier_adtvar
+            OF FId(FId1_var, FId2_var):
+                 FId?_fun(FId1_var, FId2_var, fieldidentifier_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(FId?_fun: [[string, jtype] -> ordinal]):
+        [fieldidentifier -> ordinal] =
+      LAMBDA (fieldidentifier_adtvar: fieldidentifier):
+        LET red: [fieldidentifier -> ordinal] = reduce_ordinal(FId?_fun) IN
+          CASES fieldidentifier_adtvar
+            OF FId(FId1_var, FId2_var): FId?_fun(FId1_var, FId2_var)
+            ENDCASES;
+
+  REDUCE_ordinal(FId?_fun: [[string, jtype, fieldidentifier] -> ordinal]):
+        [fieldidentifier -> ordinal] =
+      LAMBDA (fieldidentifier_adtvar: fieldidentifier):
+        LET red: [fieldidentifier -> ordinal] = REDUCE_ordinal(FId?_fun) IN
+          CASES fieldidentifier_adtvar
+            OF FId(FId1_var, FId2_var):
+                 FId?_fun(FId1_var, FId2_var, fieldidentifier_adtvar)
+            ENDCASES;
+ END fieldidentifier_adt
+
+fieldidentifier_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING fieldidentifier_adt
+
+  IMPORTING jtype
+
+  reduce(FId?_fun: [[string, jtype] -> range]):
+        [fieldidentifier -> range] =
+      LAMBDA (fieldidentifier_adtvar: fieldidentifier):
+        LET red: [fieldidentifier -> range] = reduce(FId?_fun) IN
+          CASES fieldidentifier_adtvar
+            OF FId(FId1_var, FId2_var): FId?_fun(FId1_var, FId2_var)
+            ENDCASES;
+
+  REDUCE(FId?_fun: [[string, jtype, fieldidentifier] -> range]):
+        [fieldidentifier -> range] =
+      LAMBDA (fieldidentifier_adtvar: fieldidentifier):
+        LET red: [fieldidentifier -> range] = REDUCE(FId?_fun) IN
+          CASES fieldidentifier_adtvar
+            OF FId(FId1_var, FId2_var):
+                 FId?_fun(FId1_var, FId2_var, fieldidentifier_adtvar)
+            ENDCASES;
+ END fieldidentifier_adt_reduce

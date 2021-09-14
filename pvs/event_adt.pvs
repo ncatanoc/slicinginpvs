@@ -1,0 +1,524 @@
+%%% ADT file generated from evspaces
+
+event_adt: THEORY
+ BEGIN
+
+  event: TYPE
+
+  IMPORTING obj
+
+  IMPORTING lval
+
+  IMPORTING rval
+
+  Lock?, Unlock?, Use?, Assign?, Store?, Write?, Read?, Load?: [event ->
+                                                                boolean]
+
+  tlck: [(Lock?) -> nat]
+
+  olck: [(Lock?) -> obj]
+
+  tulck: [(Unlock?) -> nat]
+
+  oulck: [(Unlock?) -> obj]
+
+  tu: [(Use?) -> nat]
+
+  lu: [(Use?) -> lval]
+
+  ru: [(Use?) -> rval]
+
+  ta: [(Assign?) -> nat]
+
+  la: [(Assign?) -> lval]
+
+  ra: [(Assign?) -> rval]
+
+  ts: [(Store?) -> nat]
+
+  ls: [(Store?) -> lval]
+
+  rs: [(Store?) -> rval]
+
+  tw: [(Write?) -> nat]
+
+  lw: [(Write?) -> lval]
+
+  rw: [(Write?) -> rval]
+
+  tr: [(Read?) -> nat]
+
+  lr: [(Read?) -> lval]
+
+  rr: [(Read?) -> rval]
+
+  tl: [(Load?) -> nat]
+
+  ll: [(Load?) -> lval]
+
+  rl: [(Load?) -> rval]
+
+  Lock: [[nat, obj] -> (Lock?)]
+
+  Unlock: [[nat, obj] -> (Unlock?)]
+
+  Use: [[nat, lval, rval] -> (Use?)]
+
+  Assign: [[nat, lval, rval] -> (Assign?)]
+
+  Store: [[nat, lval, rval] -> (Store?)]
+
+  Write: [[nat, lval, rval] -> (Write?)]
+
+  Read: [[nat, lval, rval] -> (Read?)]
+
+  Load: [[nat, lval, rval] -> (Load?)]
+
+  event_ord: [event -> upto(7)]
+
+  event_ord_defaxiom: AXIOM
+         (FORALL (tlck: nat, olck: obj): event_ord(Lock(tlck, olck)) = 0)
+     AND (FORALL (tulck: nat, oulck: obj):
+            event_ord(Unlock(tulck, oulck)) = 1)
+     AND (FORALL (tu: nat, lu: lval, ru: rval):
+            event_ord(Use(tu, lu, ru)) = 2)
+     AND (FORALL (ta: nat, la: lval, ra: rval):
+            event_ord(Assign(ta, la, ra)) = 3)
+     AND (FORALL (ts: nat, ls: lval, rs: rval):
+            event_ord(Store(ts, ls, rs)) = 4)
+     AND (FORALL (tw: nat, lw: lval, rw: rval):
+            event_ord(Write(tw, lw, rw)) = 5)
+     AND (FORALL (tr: nat, lr: lval, rr: rval):
+            event_ord(Read(tr, lr, rr)) = 6)
+     AND FORALL (tl: nat, ll: lval, rl: rval):
+           event_ord(Load(tl, ll, rl)) = 7;
+
+  ord(x: event): upto(7) =
+      CASES x
+        OF Lock(Lock1_var, Lock2_var): 0,
+           Unlock(Unlock1_var, Unlock2_var): 1,
+           Use(Use1_var, Use2_var, Use3_var): 2,
+           Assign(Assign1_var, Assign2_var, Assign3_var): 3,
+           Store(Store1_var, Store2_var, Store3_var): 4,
+           Write(Write1_var, Write2_var, Write3_var): 5,
+           Read(Read1_var, Read2_var, Read3_var): 6,
+           Load(Load1_var, Load2_var, Load3_var): 7
+        ENDCASES
+
+  event_Lock_extensionality: AXIOM
+    FORALL (Lock?_var: (Lock?), Lock?_var2: (Lock?)):
+      tlck(Lock?_var) = tlck(Lock?_var2) AND
+       olck(Lock?_var) = olck(Lock?_var2)
+       IMPLIES Lock?_var = Lock?_var2;
+
+  event_Lock_eta: AXIOM
+    FORALL (Lock?_var: (Lock?)):
+      Lock(tlck(Lock?_var), olck(Lock?_var)) = Lock?_var;
+
+  event_Unlock_extensionality: AXIOM
+    FORALL (Unlock?_var: (Unlock?), Unlock?_var2: (Unlock?)):
+      tulck(Unlock?_var) = tulck(Unlock?_var2) AND
+       oulck(Unlock?_var) = oulck(Unlock?_var2)
+       IMPLIES Unlock?_var = Unlock?_var2;
+
+  event_Unlock_eta: AXIOM
+    FORALL (Unlock?_var: (Unlock?)):
+      Unlock(tulck(Unlock?_var), oulck(Unlock?_var)) = Unlock?_var;
+
+  event_Use_extensionality: AXIOM
+    FORALL (Use?_var: (Use?), Use?_var2: (Use?)):
+      tu(Use?_var) = tu(Use?_var2) AND
+       lu(Use?_var) = lu(Use?_var2) AND ru(Use?_var) = ru(Use?_var2)
+       IMPLIES Use?_var = Use?_var2;
+
+  event_Use_eta: AXIOM
+    FORALL (Use?_var: (Use?)):
+      Use(tu(Use?_var), lu(Use?_var), ru(Use?_var)) = Use?_var;
+
+  event_Assign_extensionality: AXIOM
+    FORALL (Assign?_var: (Assign?), Assign?_var2: (Assign?)):
+      ta(Assign?_var) = ta(Assign?_var2) AND
+       la(Assign?_var) = la(Assign?_var2) AND
+        ra(Assign?_var) = ra(Assign?_var2)
+       IMPLIES Assign?_var = Assign?_var2;
+
+  event_Assign_eta: AXIOM
+    FORALL (Assign?_var: (Assign?)):
+      Assign(ta(Assign?_var), la(Assign?_var), ra(Assign?_var)) =
+       Assign?_var;
+
+  event_Store_extensionality: AXIOM
+    FORALL (Store?_var: (Store?), Store?_var2: (Store?)):
+      ts(Store?_var) = ts(Store?_var2) AND
+       ls(Store?_var) = ls(Store?_var2) AND
+        rs(Store?_var) = rs(Store?_var2)
+       IMPLIES Store?_var = Store?_var2;
+
+  event_Store_eta: AXIOM
+    FORALL (Store?_var: (Store?)):
+      Store(ts(Store?_var), ls(Store?_var), rs(Store?_var)) = Store?_var;
+
+  event_Write_extensionality: AXIOM
+    FORALL (Write?_var: (Write?), Write?_var2: (Write?)):
+      tw(Write?_var) = tw(Write?_var2) AND
+       lw(Write?_var) = lw(Write?_var2) AND
+        rw(Write?_var) = rw(Write?_var2)
+       IMPLIES Write?_var = Write?_var2;
+
+  event_Write_eta: AXIOM
+    FORALL (Write?_var: (Write?)):
+      Write(tw(Write?_var), lw(Write?_var), rw(Write?_var)) = Write?_var;
+
+  event_Read_extensionality: AXIOM
+    FORALL (Read?_var: (Read?), Read?_var2: (Read?)):
+      tr(Read?_var) = tr(Read?_var2) AND
+       lr(Read?_var) = lr(Read?_var2) AND rr(Read?_var) = rr(Read?_var2)
+       IMPLIES Read?_var = Read?_var2;
+
+  event_Read_eta: AXIOM
+    FORALL (Read?_var: (Read?)):
+      Read(tr(Read?_var), lr(Read?_var), rr(Read?_var)) = Read?_var;
+
+  event_Load_extensionality: AXIOM
+    FORALL (Load?_var: (Load?), Load?_var2: (Load?)):
+      tl(Load?_var) = tl(Load?_var2) AND
+       ll(Load?_var) = ll(Load?_var2) AND rl(Load?_var) = rl(Load?_var2)
+       IMPLIES Load?_var = Load?_var2;
+
+  event_Load_eta: AXIOM
+    FORALL (Load?_var: (Load?)):
+      Load(tl(Load?_var), ll(Load?_var), rl(Load?_var)) = Load?_var;
+
+  event_tlck_Lock: AXIOM
+    FORALL (Lock1_var: nat, Lock2_var: obj):
+      tlck(Lock(Lock1_var, Lock2_var)) = Lock1_var;
+
+  event_olck_Lock: AXIOM
+    FORALL (Lock1_var: nat, Lock2_var: obj):
+      olck(Lock(Lock1_var, Lock2_var)) = Lock2_var;
+
+  event_tulck_Unlock: AXIOM
+    FORALL (Unlock1_var: nat, Unlock2_var: obj):
+      tulck(Unlock(Unlock1_var, Unlock2_var)) = Unlock1_var;
+
+  event_oulck_Unlock: AXIOM
+    FORALL (Unlock1_var: nat, Unlock2_var: obj):
+      oulck(Unlock(Unlock1_var, Unlock2_var)) = Unlock2_var;
+
+  event_tu_Use: AXIOM
+    FORALL (Use1_var: nat, Use2_var: lval, Use3_var: rval):
+      tu(Use(Use1_var, Use2_var, Use3_var)) = Use1_var;
+
+  event_lu_Use: AXIOM
+    FORALL (Use1_var: nat, Use2_var: lval, Use3_var: rval):
+      lu(Use(Use1_var, Use2_var, Use3_var)) = Use2_var;
+
+  event_ru_Use: AXIOM
+    FORALL (Use1_var: nat, Use2_var: lval, Use3_var: rval):
+      ru(Use(Use1_var, Use2_var, Use3_var)) = Use3_var;
+
+  event_ta_Assign: AXIOM
+    FORALL (Assign1_var: nat, Assign2_var: lval, Assign3_var: rval):
+      ta(Assign(Assign1_var, Assign2_var, Assign3_var)) = Assign1_var;
+
+  event_la_Assign: AXIOM
+    FORALL (Assign1_var: nat, Assign2_var: lval, Assign3_var: rval):
+      la(Assign(Assign1_var, Assign2_var, Assign3_var)) = Assign2_var;
+
+  event_ra_Assign: AXIOM
+    FORALL (Assign1_var: nat, Assign2_var: lval, Assign3_var: rval):
+      ra(Assign(Assign1_var, Assign2_var, Assign3_var)) = Assign3_var;
+
+  event_ts_Store: AXIOM
+    FORALL (Store1_var: nat, Store2_var: lval, Store3_var: rval):
+      ts(Store(Store1_var, Store2_var, Store3_var)) = Store1_var;
+
+  event_ls_Store: AXIOM
+    FORALL (Store1_var: nat, Store2_var: lval, Store3_var: rval):
+      ls(Store(Store1_var, Store2_var, Store3_var)) = Store2_var;
+
+  event_rs_Store: AXIOM
+    FORALL (Store1_var: nat, Store2_var: lval, Store3_var: rval):
+      rs(Store(Store1_var, Store2_var, Store3_var)) = Store3_var;
+
+  event_tw_Write: AXIOM
+    FORALL (Write1_var: nat, Write2_var: lval, Write3_var: rval):
+      tw(Write(Write1_var, Write2_var, Write3_var)) = Write1_var;
+
+  event_lw_Write: AXIOM
+    FORALL (Write1_var: nat, Write2_var: lval, Write3_var: rval):
+      lw(Write(Write1_var, Write2_var, Write3_var)) = Write2_var;
+
+  event_rw_Write: AXIOM
+    FORALL (Write1_var: nat, Write2_var: lval, Write3_var: rval):
+      rw(Write(Write1_var, Write2_var, Write3_var)) = Write3_var;
+
+  event_tr_Read: AXIOM
+    FORALL (Read1_var: nat, Read2_var: lval, Read3_var: rval):
+      tr(Read(Read1_var, Read2_var, Read3_var)) = Read1_var;
+
+  event_lr_Read: AXIOM
+    FORALL (Read1_var: nat, Read2_var: lval, Read3_var: rval):
+      lr(Read(Read1_var, Read2_var, Read3_var)) = Read2_var;
+
+  event_rr_Read: AXIOM
+    FORALL (Read1_var: nat, Read2_var: lval, Read3_var: rval):
+      rr(Read(Read1_var, Read2_var, Read3_var)) = Read3_var;
+
+  event_tl_Load: AXIOM
+    FORALL (Load1_var: nat, Load2_var: lval, Load3_var: rval):
+      tl(Load(Load1_var, Load2_var, Load3_var)) = Load1_var;
+
+  event_ll_Load: AXIOM
+    FORALL (Load1_var: nat, Load2_var: lval, Load3_var: rval):
+      ll(Load(Load1_var, Load2_var, Load3_var)) = Load2_var;
+
+  event_rl_Load: AXIOM
+    FORALL (Load1_var: nat, Load2_var: lval, Load3_var: rval):
+      rl(Load(Load1_var, Load2_var, Load3_var)) = Load3_var;
+
+  event_inclusive: AXIOM
+    FORALL (event_var: event):
+           Lock?(event_var) OR Unlock?(event_var) OR Use?(event_var)
+       OR Assign?(event_var) OR Store?(event_var) OR Write?(event_var)
+       OR Read?(event_var) OR Load?(event_var);
+
+  event_induction: AXIOM
+    FORALL (p: [event -> boolean]):
+      (     (FORALL (Lock1_var: nat, Lock2_var: obj):
+               p(Lock(Lock1_var, Lock2_var)))
+        AND (FORALL (Unlock1_var: nat, Unlock2_var: obj):
+               p(Unlock(Unlock1_var, Unlock2_var)))
+        AND (FORALL (Use1_var: nat, Use2_var: lval, Use3_var: rval):
+               p(Use(Use1_var, Use2_var, Use3_var)))
+        AND (FORALL (Assign1_var: nat, Assign2_var: lval,
+                     Assign3_var: rval):
+               p(Assign(Assign1_var, Assign2_var, Assign3_var)))
+        AND (FORALL (Store1_var: nat, Store2_var: lval, Store3_var: rval):
+               p(Store(Store1_var, Store2_var, Store3_var)))
+        AND (FORALL (Write1_var: nat, Write2_var: lval, Write3_var: rval):
+               p(Write(Write1_var, Write2_var, Write3_var)))
+        AND (FORALL (Read1_var: nat, Read2_var: lval, Read3_var: rval):
+               p(Read(Read1_var, Read2_var, Read3_var)))
+        AND FORALL (Load1_var: nat, Load2_var: lval, Load3_var: rval):
+              p(Load(Load1_var, Load2_var, Load3_var)))
+       IMPLIES FORALL (event_var: event): p(event_var);
+
+  subterm(x: event, y: event):  boolean = x = y;
+
+  <<:  (strict_well_founded?[event]) = LAMBDA (x, y: event): FALSE;
+
+  event_well_founded: AXIOM strict_well_founded?[event](<<);
+
+  reduce_nat(Lock?_fun: [[nat, obj] -> nat],
+             Unlock?_fun: [[nat, obj] -> nat],
+             Use?_fun: [[nat, lval, rval] -> nat],
+             Assign?_fun: [[nat, lval, rval] -> nat],
+             Store?_fun: [[nat, lval, rval] -> nat],
+             Write?_fun: [[nat, lval, rval] -> nat],
+             Read?_fun: [[nat, lval, rval] -> nat],
+             Load?_fun: [[nat, lval, rval] -> nat]):
+        [event -> nat] =
+      LAMBDA (event_adtvar: event):
+        LET red: [event -> nat] =
+              reduce_nat(Lock?_fun, Unlock?_fun, Use?_fun, Assign?_fun,
+                         Store?_fun, Write?_fun, Read?_fun, Load?_fun)
+          IN
+          CASES event_adtvar
+            OF Lock(Lock1_var, Lock2_var): Lock?_fun(Lock1_var, Lock2_var),
+               Unlock(Unlock1_var, Unlock2_var):
+                 Unlock?_fun(Unlock1_var, Unlock2_var),
+               Use(Use1_var, Use2_var, Use3_var):
+                 Use?_fun(Use1_var, Use2_var, Use3_var),
+               Assign(Assign1_var, Assign2_var, Assign3_var):
+                 Assign?_fun(Assign1_var, Assign2_var, Assign3_var),
+               Store(Store1_var, Store2_var, Store3_var):
+                 Store?_fun(Store1_var, Store2_var, Store3_var),
+               Write(Write1_var, Write2_var, Write3_var):
+                 Write?_fun(Write1_var, Write2_var, Write3_var),
+               Read(Read1_var, Read2_var, Read3_var):
+                 Read?_fun(Read1_var, Read2_var, Read3_var),
+               Load(Load1_var, Load2_var, Load3_var):
+                 Load?_fun(Load1_var, Load2_var, Load3_var)
+            ENDCASES;
+
+  REDUCE_nat(Lock?_fun: [[nat, obj, event] -> nat],
+             Unlock?_fun: [[nat, obj, event] -> nat],
+             Use?_fun: [[nat, lval, rval, event] -> nat],
+             Assign?_fun: [[nat, lval, rval, event] -> nat],
+             Store?_fun: [[nat, lval, rval, event] -> nat],
+             Write?_fun: [[nat, lval, rval, event] -> nat],
+             Read?_fun: [[nat, lval, rval, event] -> nat],
+             Load?_fun: [[nat, lval, rval, event] -> nat]):
+        [event -> nat] =
+      LAMBDA (event_adtvar: event):
+        LET red: [event -> nat] =
+              REDUCE_nat(Lock?_fun, Unlock?_fun, Use?_fun, Assign?_fun,
+                         Store?_fun, Write?_fun, Read?_fun, Load?_fun)
+          IN
+          CASES event_adtvar
+            OF Lock(Lock1_var, Lock2_var):
+                 Lock?_fun(Lock1_var, Lock2_var, event_adtvar),
+               Unlock(Unlock1_var, Unlock2_var):
+                 Unlock?_fun(Unlock1_var, Unlock2_var, event_adtvar),
+               Use(Use1_var, Use2_var, Use3_var):
+                 Use?_fun(Use1_var, Use2_var, Use3_var, event_adtvar),
+               Assign(Assign1_var, Assign2_var, Assign3_var):
+                 Assign?_fun(Assign1_var, Assign2_var, Assign3_var,
+                             event_adtvar),
+               Store(Store1_var, Store2_var, Store3_var):
+                 Store?_fun(Store1_var, Store2_var, Store3_var,
+                            event_adtvar),
+               Write(Write1_var, Write2_var, Write3_var):
+                 Write?_fun(Write1_var, Write2_var, Write3_var,
+                            event_adtvar),
+               Read(Read1_var, Read2_var, Read3_var):
+                 Read?_fun(Read1_var, Read2_var, Read3_var, event_adtvar),
+               Load(Load1_var, Load2_var, Load3_var):
+                 Load?_fun(Load1_var, Load2_var, Load3_var, event_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(Lock?_fun: [[nat, obj] -> ordinal],
+                 Unlock?_fun: [[nat, obj] -> ordinal],
+                 Use?_fun: [[nat, lval, rval] -> ordinal],
+                 Assign?_fun: [[nat, lval, rval] -> ordinal],
+                 Store?_fun: [[nat, lval, rval] -> ordinal],
+                 Write?_fun: [[nat, lval, rval] -> ordinal],
+                 Read?_fun: [[nat, lval, rval] -> ordinal],
+                 Load?_fun: [[nat, lval, rval] -> ordinal]):
+        [event -> ordinal] =
+      LAMBDA (event_adtvar: event):
+        LET red: [event -> ordinal] =
+              reduce_ordinal(Lock?_fun, Unlock?_fun, Use?_fun, Assign?_fun,
+                             Store?_fun, Write?_fun, Read?_fun, Load?_fun)
+          IN
+          CASES event_adtvar
+            OF Lock(Lock1_var, Lock2_var): Lock?_fun(Lock1_var, Lock2_var),
+               Unlock(Unlock1_var, Unlock2_var):
+                 Unlock?_fun(Unlock1_var, Unlock2_var),
+               Use(Use1_var, Use2_var, Use3_var):
+                 Use?_fun(Use1_var, Use2_var, Use3_var),
+               Assign(Assign1_var, Assign2_var, Assign3_var):
+                 Assign?_fun(Assign1_var, Assign2_var, Assign3_var),
+               Store(Store1_var, Store2_var, Store3_var):
+                 Store?_fun(Store1_var, Store2_var, Store3_var),
+               Write(Write1_var, Write2_var, Write3_var):
+                 Write?_fun(Write1_var, Write2_var, Write3_var),
+               Read(Read1_var, Read2_var, Read3_var):
+                 Read?_fun(Read1_var, Read2_var, Read3_var),
+               Load(Load1_var, Load2_var, Load3_var):
+                 Load?_fun(Load1_var, Load2_var, Load3_var)
+            ENDCASES;
+
+  REDUCE_ordinal(Lock?_fun: [[nat, obj, event] -> ordinal],
+                 Unlock?_fun: [[nat, obj, event] -> ordinal],
+                 Use?_fun: [[nat, lval, rval, event] -> ordinal],
+                 Assign?_fun: [[nat, lval, rval, event] -> ordinal],
+                 Store?_fun: [[nat, lval, rval, event] -> ordinal],
+                 Write?_fun: [[nat, lval, rval, event] -> ordinal],
+                 Read?_fun: [[nat, lval, rval, event] -> ordinal],
+                 Load?_fun: [[nat, lval, rval, event] -> ordinal]):
+        [event -> ordinal] =
+      LAMBDA (event_adtvar: event):
+        LET red: [event -> ordinal] =
+              REDUCE_ordinal(Lock?_fun, Unlock?_fun, Use?_fun, Assign?_fun,
+                             Store?_fun, Write?_fun, Read?_fun, Load?_fun)
+          IN
+          CASES event_adtvar
+            OF Lock(Lock1_var, Lock2_var):
+                 Lock?_fun(Lock1_var, Lock2_var, event_adtvar),
+               Unlock(Unlock1_var, Unlock2_var):
+                 Unlock?_fun(Unlock1_var, Unlock2_var, event_adtvar),
+               Use(Use1_var, Use2_var, Use3_var):
+                 Use?_fun(Use1_var, Use2_var, Use3_var, event_adtvar),
+               Assign(Assign1_var, Assign2_var, Assign3_var):
+                 Assign?_fun(Assign1_var, Assign2_var, Assign3_var,
+                             event_adtvar),
+               Store(Store1_var, Store2_var, Store3_var):
+                 Store?_fun(Store1_var, Store2_var, Store3_var,
+                            event_adtvar),
+               Write(Write1_var, Write2_var, Write3_var):
+                 Write?_fun(Write1_var, Write2_var, Write3_var,
+                            event_adtvar),
+               Read(Read1_var, Read2_var, Read3_var):
+                 Read?_fun(Read1_var, Read2_var, Read3_var, event_adtvar),
+               Load(Load1_var, Load2_var, Load3_var):
+                 Load?_fun(Load1_var, Load2_var, Load3_var, event_adtvar)
+            ENDCASES;
+ END event_adt
+
+event_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING event_adt
+
+  IMPORTING obj, lval, rval
+
+  reduce(Lock?_fun: [[nat, obj] -> range],
+         Unlock?_fun: [[nat, obj] -> range],
+         Use?_fun: [[nat, lval, rval] -> range],
+         Assign?_fun: [[nat, lval, rval] -> range],
+         Store?_fun: [[nat, lval, rval] -> range],
+         Write?_fun: [[nat, lval, rval] -> range],
+         Read?_fun: [[nat, lval, rval] -> range],
+         Load?_fun: [[nat, lval, rval] -> range]):
+        [event -> range] =
+      LAMBDA (event_adtvar: event):
+        LET red: [event -> range] =
+              reduce(Lock?_fun, Unlock?_fun, Use?_fun, Assign?_fun,
+                     Store?_fun, Write?_fun, Read?_fun, Load?_fun)
+          IN
+          CASES event_adtvar
+            OF Lock(Lock1_var, Lock2_var): Lock?_fun(Lock1_var, Lock2_var),
+               Unlock(Unlock1_var, Unlock2_var):
+                 Unlock?_fun(Unlock1_var, Unlock2_var),
+               Use(Use1_var, Use2_var, Use3_var):
+                 Use?_fun(Use1_var, Use2_var, Use3_var),
+               Assign(Assign1_var, Assign2_var, Assign3_var):
+                 Assign?_fun(Assign1_var, Assign2_var, Assign3_var),
+               Store(Store1_var, Store2_var, Store3_var):
+                 Store?_fun(Store1_var, Store2_var, Store3_var),
+               Write(Write1_var, Write2_var, Write3_var):
+                 Write?_fun(Write1_var, Write2_var, Write3_var),
+               Read(Read1_var, Read2_var, Read3_var):
+                 Read?_fun(Read1_var, Read2_var, Read3_var),
+               Load(Load1_var, Load2_var, Load3_var):
+                 Load?_fun(Load1_var, Load2_var, Load3_var)
+            ENDCASES;
+
+  REDUCE(Lock?_fun: [[nat, obj, event] -> range],
+         Unlock?_fun: [[nat, obj, event] -> range],
+         Use?_fun: [[nat, lval, rval, event] -> range],
+         Assign?_fun: [[nat, lval, rval, event] -> range],
+         Store?_fun: [[nat, lval, rval, event] -> range],
+         Write?_fun: [[nat, lval, rval, event] -> range],
+         Read?_fun: [[nat, lval, rval, event] -> range],
+         Load?_fun: [[nat, lval, rval, event] -> range]):
+        [event -> range] =
+      LAMBDA (event_adtvar: event):
+        LET red: [event -> range] =
+              REDUCE(Lock?_fun, Unlock?_fun, Use?_fun, Assign?_fun,
+                     Store?_fun, Write?_fun, Read?_fun, Load?_fun)
+          IN
+          CASES event_adtvar
+            OF Lock(Lock1_var, Lock2_var):
+                 Lock?_fun(Lock1_var, Lock2_var, event_adtvar),
+               Unlock(Unlock1_var, Unlock2_var):
+                 Unlock?_fun(Unlock1_var, Unlock2_var, event_adtvar),
+               Use(Use1_var, Use2_var, Use3_var):
+                 Use?_fun(Use1_var, Use2_var, Use3_var, event_adtvar),
+               Assign(Assign1_var, Assign2_var, Assign3_var):
+                 Assign?_fun(Assign1_var, Assign2_var, Assign3_var,
+                             event_adtvar),
+               Store(Store1_var, Store2_var, Store3_var):
+                 Store?_fun(Store1_var, Store2_var, Store3_var,
+                            event_adtvar),
+               Write(Write1_var, Write2_var, Write3_var):
+                 Write?_fun(Write1_var, Write2_var, Write3_var,
+                            event_adtvar),
+               Read(Read1_var, Read2_var, Read3_var):
+                 Read?_fun(Read1_var, Read2_var, Read3_var, event_adtvar),
+               Load(Load1_var, Load2_var, Load3_var):
+                 Load?_fun(Load1_var, Load2_var, Load3_var, event_adtvar)
+            ENDCASES;
+ END event_adt_reduce

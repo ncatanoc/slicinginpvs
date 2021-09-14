@@ -1,0 +1,273 @@
+%%% ADT file generated from evspaces
+
+state_prop_adt: THEORY
+ BEGIN
+
+  state_prop: TYPE
+
+  IMPORTING simple_atom_prop
+
+  OR?, AND?, NEG?, T?: [state_prop -> boolean]
+
+  psor1_: [(OR?) -> state_prop]
+
+  or2_: [(OR?) -> state_prop]
+
+  psand1_: [(AND?) -> state_prop]
+
+  and2_: [(AND?) -> state_prop]
+
+  psneg_: [(NEG?) -> state_prop]
+
+  pspt_: [(T?) -> simple_atom_prop]
+
+  P_OR: [[state_prop, state_prop] -> (OR?)]
+
+  P_AND: [[state_prop, state_prop] -> (AND?)]
+
+  P_NEG: [state_prop -> (NEG?)]
+
+  P_T: [simple_atom_prop -> (T?)]
+
+  state_prop_ord: [state_prop -> upto(3)]
+
+  state_prop_ord_defaxiom: AXIOM
+    (FORALL (psor1_: state_prop, or2_: state_prop):
+       state_prop_ord(P_OR(psor1_, or2_)) = 0)
+     AND
+     (FORALL (psand1_: state_prop, and2_: state_prop):
+        state_prop_ord(P_AND(psand1_, and2_)) = 1)
+      AND
+      (FORALL (psneg_: state_prop): state_prop_ord(P_NEG(psneg_)) = 2) AND
+       FORALL (pspt_: simple_atom_prop): state_prop_ord(P_T(pspt_)) = 3;
+
+  ord(x: state_prop): upto(3) =
+      CASES x
+        OF P_OR(P_OR1_var, P_OR2_var): 0,
+           P_AND(P_AND1_var, P_AND2_var): 1,
+           P_NEG(P_NEG1_var): 2,
+           P_T(P_T1_var): 3
+        ENDCASES
+
+  state_prop_P_OR_extensionality: AXIOM
+    FORALL (OR?_var: (OR?), OR?_var2: (OR?)):
+      psor1_(OR?_var) = psor1_(OR?_var2) AND or2_(OR?_var) = or2_(OR?_var2)
+       IMPLIES OR?_var = OR?_var2;
+
+  state_prop_P_OR_eta: AXIOM
+    FORALL (OR?_var: (OR?)): P_OR(psor1_(OR?_var), or2_(OR?_var)) = OR?_var;
+
+  state_prop_P_AND_extensionality: AXIOM
+    FORALL (AND?_var: (AND?), AND?_var2: (AND?)):
+      psand1_(AND?_var) = psand1_(AND?_var2) AND
+       and2_(AND?_var) = and2_(AND?_var2)
+       IMPLIES AND?_var = AND?_var2;
+
+  state_prop_P_AND_eta: AXIOM
+    FORALL (AND?_var: (AND?)):
+      P_AND(psand1_(AND?_var), and2_(AND?_var)) = AND?_var;
+
+  state_prop_P_NEG_extensionality: AXIOM
+    FORALL (NEG?_var: (NEG?), NEG?_var2: (NEG?)):
+      psneg_(NEG?_var) = psneg_(NEG?_var2) IMPLIES NEG?_var = NEG?_var2;
+
+  state_prop_P_NEG_eta: AXIOM
+    FORALL (NEG?_var: (NEG?)): P_NEG(psneg_(NEG?_var)) = NEG?_var;
+
+  state_prop_P_T_extensionality: AXIOM
+    FORALL (T?_var: (T?), T?_var2: (T?)):
+      pspt_(T?_var) = pspt_(T?_var2) IMPLIES T?_var = T?_var2;
+
+  state_prop_P_T_eta: AXIOM
+    FORALL (T?_var: (T?)): P_T(pspt_(T?_var)) = T?_var;
+
+  state_prop_psor1__P_OR: AXIOM
+    FORALL (P_OR1_var: state_prop, P_OR2_var: state_prop):
+      psor1_(P_OR(P_OR1_var, P_OR2_var)) = P_OR1_var;
+
+  state_prop_or2__P_OR: AXIOM
+    FORALL (P_OR1_var: state_prop, P_OR2_var: state_prop):
+      or2_(P_OR(P_OR1_var, P_OR2_var)) = P_OR2_var;
+
+  state_prop_psand1__P_AND: AXIOM
+    FORALL (P_AND1_var: state_prop, P_AND2_var: state_prop):
+      psand1_(P_AND(P_AND1_var, P_AND2_var)) = P_AND1_var;
+
+  state_prop_and2__P_AND: AXIOM
+    FORALL (P_AND1_var: state_prop, P_AND2_var: state_prop):
+      and2_(P_AND(P_AND1_var, P_AND2_var)) = P_AND2_var;
+
+  state_prop_psneg__P_NEG: AXIOM
+    FORALL (P_NEG1_var: state_prop): psneg_(P_NEG(P_NEG1_var)) = P_NEG1_var;
+
+  state_prop_pspt__P_T: AXIOM
+    FORALL (P_T1_var: simple_atom_prop): pspt_(P_T(P_T1_var)) = P_T1_var;
+
+  state_prop_inclusive: AXIOM
+    FORALL (state_prop_var: state_prop):
+      OR?(state_prop_var) OR
+       AND?(state_prop_var) OR NEG?(state_prop_var) OR T?(state_prop_var);
+
+  state_prop_induction: AXIOM
+    FORALL (p: [state_prop -> boolean]):
+      ((FORALL (P_OR1_var: state_prop, P_OR2_var: state_prop):
+          p(P_OR1_var) AND p(P_OR2_var) IMPLIES
+           p(P_OR(P_OR1_var, P_OR2_var)))
+        AND
+        (FORALL (P_AND1_var: state_prop, P_AND2_var: state_prop):
+           p(P_AND1_var) AND p(P_AND2_var) IMPLIES
+            p(P_AND(P_AND1_var, P_AND2_var)))
+         AND
+         (FORALL (P_NEG1_var: state_prop):
+            p(P_NEG1_var) IMPLIES p(P_NEG(P_NEG1_var)))
+          AND FORALL (P_T1_var: simple_atom_prop): p(P_T(P_T1_var)))
+       IMPLIES FORALL (state_prop_var: state_prop): p(state_prop_var);
+
+  subterm(x: state_prop, y: state_prop):  boolean =
+      x = y OR
+       CASES y
+         OF P_OR(P_OR1_var, P_OR2_var):
+              subterm(x, P_OR1_var) OR subterm(x, P_OR2_var),
+            P_AND(P_AND1_var, P_AND2_var):
+              subterm(x, P_AND1_var) OR subterm(x, P_AND2_var),
+            P_NEG(P_NEG1_var): subterm(x, P_NEG1_var),
+            P_T(P_T1_var): FALSE
+         ENDCASES;
+
+  <<:  (strict_well_founded?[state_prop]) =
+      LAMBDA (x, y: state_prop):
+        CASES y
+          OF P_OR(P_OR1_var, P_OR2_var):
+               (x = P_OR1_var OR x << P_OR1_var) OR
+                (x = P_OR2_var OR x << P_OR2_var),
+             P_AND(P_AND1_var, P_AND2_var):
+               (x = P_AND1_var OR x << P_AND1_var) OR
+                (x = P_AND2_var OR x << P_AND2_var),
+             P_NEG(P_NEG1_var): (x = P_NEG1_var OR x << P_NEG1_var),
+             P_T(P_T1_var): FALSE
+          ENDCASES;
+
+  state_prop_well_founded: AXIOM strict_well_founded?[state_prop](<<);
+
+  reduce_nat(OR?_fun: [[nat, nat] -> nat], AND?_fun: [[nat, nat] -> nat],
+             NEG?_fun: [nat -> nat], T?_fun: [simple_atom_prop -> nat]):
+        [state_prop -> nat] =
+      LAMBDA (state_prop_adtvar: state_prop):
+        LET red: [state_prop -> nat] =
+              reduce_nat(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES state_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var)),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var)),
+               P_NEG(P_NEG1_var): NEG?_fun(red(P_NEG1_var)),
+               P_T(P_T1_var): T?_fun(P_T1_var)
+            ENDCASES;
+
+  REDUCE_nat(OR?_fun: [[nat, nat, state_prop] -> nat],
+             AND?_fun: [[nat, nat, state_prop] -> nat],
+             NEG?_fun: [[nat, state_prop] -> nat],
+             T?_fun: [[simple_atom_prop, state_prop] -> nat]):
+        [state_prop -> nat] =
+      LAMBDA (state_prop_adtvar: state_prop):
+        LET red: [state_prop -> nat] =
+              REDUCE_nat(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES state_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var),
+                         state_prop_adtvar),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var),
+                          state_prop_adtvar),
+               P_NEG(P_NEG1_var):
+                 NEG?_fun(red(P_NEG1_var), state_prop_adtvar),
+               P_T(P_T1_var): T?_fun(P_T1_var, state_prop_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(OR?_fun: [[ordinal, ordinal] -> ordinal],
+                 AND?_fun: [[ordinal, ordinal] -> ordinal],
+                 NEG?_fun: [ordinal -> ordinal],
+                 T?_fun: [simple_atom_prop -> ordinal]):
+        [state_prop -> ordinal] =
+      LAMBDA (state_prop_adtvar: state_prop):
+        LET red: [state_prop -> ordinal] =
+              reduce_ordinal(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES state_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var)),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var)),
+               P_NEG(P_NEG1_var): NEG?_fun(red(P_NEG1_var)),
+               P_T(P_T1_var): T?_fun(P_T1_var)
+            ENDCASES;
+
+  REDUCE_ordinal(OR?_fun: [[ordinal, ordinal, state_prop] -> ordinal],
+                 AND?_fun: [[ordinal, ordinal, state_prop] -> ordinal],
+                 NEG?_fun: [[ordinal, state_prop] -> ordinal],
+                 T?_fun: [[simple_atom_prop, state_prop] -> ordinal]):
+        [state_prop -> ordinal] =
+      LAMBDA (state_prop_adtvar: state_prop):
+        LET red: [state_prop -> ordinal] =
+              REDUCE_ordinal(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES state_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var),
+                         state_prop_adtvar),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var),
+                          state_prop_adtvar),
+               P_NEG(P_NEG1_var):
+                 NEG?_fun(red(P_NEG1_var), state_prop_adtvar),
+               P_T(P_T1_var): T?_fun(P_T1_var, state_prop_adtvar)
+            ENDCASES;
+ END state_prop_adt
+
+state_prop_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING state_prop_adt
+
+  IMPORTING simple_atom_prop
+
+  reduce(OR?_fun: [[range, range] -> range],
+         AND?_fun: [[range, range] -> range], NEG?_fun: [range -> range],
+         T?_fun: [simple_atom_prop -> range]):
+        [state_prop -> range] =
+      LAMBDA (state_prop_adtvar: state_prop):
+        LET red: [state_prop -> range] =
+              reduce(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES state_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var)),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var)),
+               P_NEG(P_NEG1_var): NEG?_fun(red(P_NEG1_var)),
+               P_T(P_T1_var): T?_fun(P_T1_var)
+            ENDCASES;
+
+  REDUCE(OR?_fun: [[range, range, state_prop] -> range],
+         AND?_fun: [[range, range, state_prop] -> range],
+         NEG?_fun: [[range, state_prop] -> range],
+         T?_fun: [[simple_atom_prop, state_prop] -> range]):
+        [state_prop -> range] =
+      LAMBDA (state_prop_adtvar: state_prop):
+        LET red: [state_prop -> range] =
+              REDUCE(OR?_fun, AND?_fun, NEG?_fun, T?_fun)
+          IN
+          CASES state_prop_adtvar
+            OF P_OR(P_OR1_var, P_OR2_var):
+                 OR?_fun(red(P_OR1_var), red(P_OR2_var),
+                         state_prop_adtvar),
+               P_AND(P_AND1_var, P_AND2_var):
+                 AND?_fun(red(P_AND1_var), red(P_AND2_var),
+                          state_prop_adtvar),
+               P_NEG(P_NEG1_var):
+                 NEG?_fun(red(P_NEG1_var), state_prop_adtvar),
+               P_T(P_T1_var): T?_fun(P_T1_var, state_prop_adtvar)
+            ENDCASES;
+ END state_prop_adt_reduce

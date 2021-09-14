@@ -1,0 +1,135 @@
+%%% ADT file generated from evspaces
+
+constvar_prop_adt: THEORY
+ BEGIN
+
+  constvar_prop: TYPE
+
+  IMPORTING lval
+
+  VRB?, CNS?: [constvar_prop -> boolean]
+
+  var_: [(VRB?) -> lval]
+
+  cns_: [(CNS?) -> nat]
+
+  VRB: [lval -> (VRB?)]
+
+  CNS: [nat -> (CNS?)]
+
+  constvar_prop_ord: [constvar_prop -> upto(1)]
+
+  constvar_prop_ord_defaxiom: AXIOM
+    (FORALL (var_: lval): constvar_prop_ord(VRB(var_)) = 0) AND
+     FORALL (cns_: nat): constvar_prop_ord(CNS(cns_)) = 1;
+
+  ord(x: constvar_prop): upto(1) =
+      CASES x OF VRB(VRB1_var): 0, CNS(CNS1_var): 1 ENDCASES
+
+  constvar_prop_VRB_extensionality: AXIOM
+    FORALL (VRB?_var: (VRB?), VRB?_var2: (VRB?)):
+      var_(VRB?_var) = var_(VRB?_var2) IMPLIES VRB?_var = VRB?_var2;
+
+  constvar_prop_VRB_eta: AXIOM
+    FORALL (VRB?_var: (VRB?)): VRB(var_(VRB?_var)) = VRB?_var;
+
+  constvar_prop_CNS_extensionality: AXIOM
+    FORALL (CNS?_var: (CNS?), CNS?_var2: (CNS?)):
+      cns_(CNS?_var) = cns_(CNS?_var2) IMPLIES CNS?_var = CNS?_var2;
+
+  constvar_prop_CNS_eta: AXIOM
+    FORALL (CNS?_var: (CNS?)): CNS(cns_(CNS?_var)) = CNS?_var;
+
+  constvar_prop_var__VRB: AXIOM
+    FORALL (VRB1_var: lval): var_(VRB(VRB1_var)) = VRB1_var;
+
+  constvar_prop_cns__CNS: AXIOM
+    FORALL (CNS1_var: nat): cns_(CNS(CNS1_var)) = CNS1_var;
+
+  constvar_prop_inclusive: AXIOM
+    FORALL (constvar_prop_var: constvar_prop):
+      VRB?(constvar_prop_var) OR CNS?(constvar_prop_var);
+
+  constvar_prop_induction: AXIOM
+    FORALL (p: [constvar_prop -> boolean]):
+      ((FORALL (VRB1_var: lval): p(VRB(VRB1_var))) AND
+        FORALL (CNS1_var: nat): p(CNS(CNS1_var)))
+       IMPLIES
+       FORALL (constvar_prop_var: constvar_prop): p(constvar_prop_var);
+
+  subterm(x: constvar_prop, y: constvar_prop):  boolean = x = y;
+
+  <<:  (strict_well_founded?[constvar_prop]) =
+      LAMBDA (x, y: constvar_prop): FALSE;
+
+  constvar_prop_well_founded: AXIOM strict_well_founded?[constvar_prop](<<);
+
+  reduce_nat(VRB?_fun: [lval -> nat], CNS?_fun: [nat -> nat]):
+        [constvar_prop -> nat] =
+      LAMBDA (constvar_prop_adtvar: constvar_prop):
+        LET red: [constvar_prop -> nat] = reduce_nat(VRB?_fun, CNS?_fun) IN
+          CASES constvar_prop_adtvar
+            OF VRB(VRB1_var): VRB?_fun(VRB1_var),
+               CNS(CNS1_var): CNS?_fun(CNS1_var)
+            ENDCASES;
+
+  REDUCE_nat(VRB?_fun: [[lval, constvar_prop] -> nat],
+             CNS?_fun: [[nat, constvar_prop] -> nat]):
+        [constvar_prop -> nat] =
+      LAMBDA (constvar_prop_adtvar: constvar_prop):
+        LET red: [constvar_prop -> nat] = REDUCE_nat(VRB?_fun, CNS?_fun) IN
+          CASES constvar_prop_adtvar
+            OF VRB(VRB1_var): VRB?_fun(VRB1_var, constvar_prop_adtvar),
+               CNS(CNS1_var): CNS?_fun(CNS1_var, constvar_prop_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(VRB?_fun: [lval -> ordinal], CNS?_fun: [nat -> ordinal]):
+        [constvar_prop -> ordinal] =
+      LAMBDA (constvar_prop_adtvar: constvar_prop):
+        LET red: [constvar_prop -> ordinal] =
+              reduce_ordinal(VRB?_fun, CNS?_fun)
+          IN
+          CASES constvar_prop_adtvar
+            OF VRB(VRB1_var): VRB?_fun(VRB1_var),
+               CNS(CNS1_var): CNS?_fun(CNS1_var)
+            ENDCASES;
+
+  REDUCE_ordinal(VRB?_fun: [[lval, constvar_prop] -> ordinal],
+                 CNS?_fun: [[nat, constvar_prop] -> ordinal]):
+        [constvar_prop -> ordinal] =
+      LAMBDA (constvar_prop_adtvar: constvar_prop):
+        LET red: [constvar_prop -> ordinal] =
+              REDUCE_ordinal(VRB?_fun, CNS?_fun)
+          IN
+          CASES constvar_prop_adtvar
+            OF VRB(VRB1_var): VRB?_fun(VRB1_var, constvar_prop_adtvar),
+               CNS(CNS1_var): CNS?_fun(CNS1_var, constvar_prop_adtvar)
+            ENDCASES;
+ END constvar_prop_adt
+
+constvar_prop_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING constvar_prop_adt
+
+  IMPORTING lval
+
+  reduce(VRB?_fun: [lval -> range], CNS?_fun: [nat -> range]):
+        [constvar_prop -> range] =
+      LAMBDA (constvar_prop_adtvar: constvar_prop):
+        LET red: [constvar_prop -> range] = reduce(VRB?_fun, CNS?_fun) IN
+          CASES constvar_prop_adtvar
+            OF VRB(VRB1_var): VRB?_fun(VRB1_var),
+               CNS(CNS1_var): CNS?_fun(CNS1_var)
+            ENDCASES;
+
+  REDUCE(VRB?_fun: [[lval, constvar_prop] -> range],
+         CNS?_fun: [[nat, constvar_prop] -> range]):
+        [constvar_prop -> range] =
+      LAMBDA (constvar_prop_adtvar: constvar_prop):
+        LET red: [constvar_prop -> range] = REDUCE(VRB?_fun, CNS?_fun) IN
+          CASES constvar_prop_adtvar
+            OF VRB(VRB1_var): VRB?_fun(VRB1_var, constvar_prop_adtvar),
+               CNS(CNS1_var): CNS?_fun(CNS1_var, constvar_prop_adtvar)
+            ENDCASES;
+ END constvar_prop_adt_reduce

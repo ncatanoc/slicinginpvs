@@ -1,0 +1,116 @@
+%%% ADT file generated from evspaces
+
+lval_adt: THEORY
+ BEGIN
+
+  lval: TYPE
+
+  IMPORTING obj
+
+  IMPORTING fieldidentifier
+
+  Lval?: [lval -> boolean]
+
+  nonnullobj_: [lval -> obj]
+
+  fieldidentifier_: [lval -> fieldidentifier]
+
+  Lval: [[obj, fieldidentifier] -> (Lval?)]
+
+  lval_ord: [lval -> upto(0)]
+
+  lval_ord_defaxiom: AXIOM
+    FORALL (nonnullobj_: obj, fieldidentifier_: fieldidentifier):
+      lval_ord(Lval(nonnullobj_, fieldidentifier_)) = 0;
+
+  ord(x: lval): upto(0) = CASES x OF Lval(Lval1_var, Lval2_var): 0 ENDCASES
+
+  lval_Lval_extensionality: AXIOM
+    FORALL (Lval?_var: (Lval?), Lval?_var2: (Lval?)):
+      nonnullobj_(Lval?_var) = nonnullobj_(Lval?_var2) AND
+       fieldidentifier_(Lval?_var) = fieldidentifier_(Lval?_var2)
+       IMPLIES Lval?_var = Lval?_var2;
+
+  lval_Lval_eta: AXIOM
+    FORALL (Lval?_var: (Lval?)):
+      Lval(nonnullobj_(Lval?_var), fieldidentifier_(Lval?_var)) = Lval?_var;
+
+  lval_nonnullobj__Lval: AXIOM
+    FORALL (Lval1_var: obj, Lval2_var: fieldidentifier):
+      nonnullobj_(Lval(Lval1_var, Lval2_var)) = Lval1_var;
+
+  lval_fieldidentifier__Lval: AXIOM
+    FORALL (Lval1_var: obj, Lval2_var: fieldidentifier):
+      fieldidentifier_(Lval(Lval1_var, Lval2_var)) = Lval2_var;
+
+  lval_inclusive: AXIOM FORALL (lval_var: lval): Lval?(lval_var);
+
+  lval_induction: AXIOM
+    FORALL (p: [lval -> boolean]):
+      (FORALL (Lval1_var: obj, Lval2_var: fieldidentifier):
+         p(Lval(Lval1_var, Lval2_var)))
+       IMPLIES FORALL (lval_var: lval): p(lval_var);
+
+  subterm(x: lval, y: lval):  boolean = x = y;
+
+  <<:  (strict_well_founded?[lval]) = LAMBDA (x, y: lval): FALSE;
+
+  lval_well_founded: AXIOM strict_well_founded?[lval](<<);
+
+  reduce_nat(Lval?_fun: [[obj, fieldidentifier] -> nat]):  [lval -> nat] =
+      LAMBDA (lval_adtvar: lval):
+        LET red: [lval -> nat] = reduce_nat(Lval?_fun) IN
+          CASES lval_adtvar
+            OF Lval(Lval1_var, Lval2_var): Lval?_fun(Lval1_var, Lval2_var)
+            ENDCASES;
+
+  REDUCE_nat(Lval?_fun: [[obj, fieldidentifier, lval] -> nat]):
+        [lval -> nat] =
+      LAMBDA (lval_adtvar: lval):
+        LET red: [lval -> nat] = REDUCE_nat(Lval?_fun) IN
+          CASES lval_adtvar
+            OF Lval(Lval1_var, Lval2_var):
+                 Lval?_fun(Lval1_var, Lval2_var, lval_adtvar)
+            ENDCASES;
+
+  reduce_ordinal(Lval?_fun: [[obj, fieldidentifier] -> ordinal]):
+        [lval -> ordinal] =
+      LAMBDA (lval_adtvar: lval):
+        LET red: [lval -> ordinal] = reduce_ordinal(Lval?_fun) IN
+          CASES lval_adtvar
+            OF Lval(Lval1_var, Lval2_var): Lval?_fun(Lval1_var, Lval2_var)
+            ENDCASES;
+
+  REDUCE_ordinal(Lval?_fun: [[obj, fieldidentifier, lval] -> ordinal]):
+        [lval -> ordinal] =
+      LAMBDA (lval_adtvar: lval):
+        LET red: [lval -> ordinal] = REDUCE_ordinal(Lval?_fun) IN
+          CASES lval_adtvar
+            OF Lval(Lval1_var, Lval2_var):
+                 Lval?_fun(Lval1_var, Lval2_var, lval_adtvar)
+            ENDCASES;
+ END lval_adt
+
+lval_adt_reduce[range: TYPE]: THEORY
+ BEGIN
+
+  IMPORTING lval_adt
+
+  IMPORTING obj, fieldidentifier
+
+  reduce(Lval?_fun: [[obj, fieldidentifier] -> range]):  [lval -> range] =
+      LAMBDA (lval_adtvar: lval):
+        LET red: [lval -> range] = reduce(Lval?_fun) IN
+          CASES lval_adtvar
+            OF Lval(Lval1_var, Lval2_var): Lval?_fun(Lval1_var, Lval2_var)
+            ENDCASES;
+
+  REDUCE(Lval?_fun: [[obj, fieldidentifier, lval] -> range]):
+        [lval -> range] =
+      LAMBDA (lval_adtvar: lval):
+        LET red: [lval -> range] = REDUCE(Lval?_fun) IN
+          CASES lval_adtvar
+            OF Lval(Lval1_var, Lval2_var):
+                 Lval?_fun(Lval1_var, Lval2_var, lval_adtvar)
+            ENDCASES;
+ END lval_adt_reduce
